@@ -388,6 +388,12 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
   .form-row { grid-template-columns:1fr; }
   .hero-stats { gap:24px; }
 }
+
+.btn-redeem, .btn-register { margin-top:14px; background:transparent; border:1px solid var(--cyan); color:var(--cyan); font-family:'Orbitron',monospace; font-size:0.6rem; font-weight:600; letter-spacing:2px; padding:9px 14px; cursor:pointer; transition:all .25s; text-transform:uppercase; }
+.btn-redeem:hover, .btn-register:hover { background:var(--cyan-dim); }
+.btn-redeem[disabled] { opacity:.4; cursor:not-allowed; }
+.station-cell.free { cursor:pointer; }
+.form-input.invalid { border-color:var(--orange) !important; }
 </style>
 </head>
 <body>
@@ -437,8 +443,8 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
     </div>
     <div class="modal-success" id="modal-success">
       <span class="success-icon">⚡</span>
-      <strong>RESERVATION CONFIRMED</strong>
-      <p style="margin-top:12px;">Your station has been locked in.<br>We'll WhatsApp you a confirmation shortly at <strong id="confirmed-phone"></strong>.</p>
+      <strong>REQUEST READY</strong>
+      <p style="margin-top:12px;">WhatsApp opened with your reservation details. Send the message and we'll confirm to <strong id="confirmed-phone"></strong>.</p>
       <button class="modal-confirm" onclick="closeModal()" style="margin-top:24px;">BACK TO SITE</button>
     </div>
   </div>
@@ -479,7 +485,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
         </div>
         <a href="#booking" onclick="closeUserDropdown()">🎮 &nbsp;Book a Station</a>
         <a href="#loyalty" onclick="closeUserDropdown()">⭐ &nbsp;My Loyalty Points</a>
-        <a href="#" onclick="closeUserDropdown()">👤 &nbsp;My Profile</a>
+        <a href="#loyalty" onclick="closeUserDropdown()">👤 &nbsp;My Profile</a>
         <button class="logout-btn" onclick="logoutUser()">⏻ &nbsp;Logout</button>
       </div>
     </div>
@@ -639,19 +645,19 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
   <p class="section-sub">Earn XP points every session. Unlock perks, free hours, and exclusive rewards.</p>
   <div class="loyalty-wrap">
     <div class="loyalty-card">
-      <div class="loyalty-rank">RANK: PLATINUM</div>
-      <div class="loyalty-name">EXAMPLE MEMBER</div>
+      <div class="loyalty-rank" id="loyalty-rank">RANK: BRONZE</div>
+      <div class="loyalty-name" id="loyalty-name">GUEST</div>
       <div class="loyalty-pts-label">// NEXUS POINTS</div>
       <div class="loyalty-pts" id="loyalty-pts-display">0</div>
       <div class="loyalty-bar-wrap">
         <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--gray);">
-          <span>PLATINUM</span><span>2,400 pts to DIAMOND</span>
+          <span id="loyalty-from">BRONZE</span><span id="loyalty-togo">500 pts to SILVER</span>
         </div>
         <div class="loyalty-bar-track"><div class="loyalty-bar-fill" id="loyalty-bar" style="width:0%"></div></div>
-        <div class="loyalty-bar-labels"><span>2,600 pts</span><span>5,000 pts</span></div>
+        <div class="loyalty-bar-labels"><span id="loyalty-lo">0 pts</span><span id="loyalty-hi">500 pts</span></div>
       </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--gray);margin-top:16px;">
-        🕒 Last session: <span style="color:var(--white);">Yesterday, 3 hrs</span> &nbsp;+<span style="color:var(--cyan);">30 pts</span>
+      <div id="loyalty-hint" style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--gray);margin-top:16px;">
+        <a href="login.html" style="color:var(--cyan);">Log in</a> to see your points and redeem rewards.
       </div>
     </div>
     <div>
@@ -690,7 +696,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
         </div>
         <div class="form-group">
           <label class="form-label">Time Slot</label>
-          <select class="form-select">
+          <select class="form-select" id="booking-time">
             <option>10:00 AM</option><option>12:00 PM</option><option>2:00 PM</option>
             <option>4:00 PM</option><option>6:00 PM</option><option>8:00 PM</option><option>10:00 PM</option>
           </select>
@@ -716,7 +722,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       </div>
       <div class="form-group">
         <label class="form-label">Notes (optional)</label>
-        <input type="text" class="form-input" placeholder="Preferred peripherals, game pre-loaded, etc.">
+        <input type="text" class="form-input" id="booking-notes" placeholder="Preferred peripherals, game pre-loaded, etc.">
       </div>
       <button class="btn-submit" onclick="submitBooking()">CONFIRM RESERVATION →</button>
     </div>
@@ -826,19 +832,19 @@ const CAFE_DATA = {
 
   loyalty: {
     tiers:[
-      { name:'BRONZE', color:'#cd7f32', req:'0 pts', perk:'Standard access', current:false },
-      { name:'SILVER', color:'#aaa', req:'500 pts', perk:'+5% bonus pts', current:false },
-      { name:'GOLD', color:'#f5c518', req:'1,000 pts', perk:'Free drink/month', current:false },
-      { name:'PLATINUM', color:'#00f5ff', req:'2,000 pts', perk:'1 free hr/month', current:true },
-      { name:'DIAMOND', color:'#b47fff', req:'5,000 pts', perk:'Priority booking + 2 free hrs', current:false }
+      { name:'BRONZE', color:'#cd7f32', req:'0 pts', min:0, perk:'Standard access' },
+      { name:'SILVER', color:'#aaa', req:'500 pts', min:500, perk:'+5% bonus pts' },
+      { name:'GOLD', color:'#f5c518', req:'1,000 pts', min:1000, perk:'Free drink/month' },
+      { name:'PLATINUM', color:'#00f5ff', req:'2,000 pts', min:2000, perk:'1 free hr/month' },
+      { name:'DIAMOND', color:'#b47fff', req:'5,000 pts', min:5000, perk:'Priority booking + 2 free hrs' }
     ],
     rewards:[
-      { icon:'☕', name:'FREE DRINK', cost:'100 pts', desc:'Any drink from the menu' },
-      { icon:'⏱️', name:'1 FREE HOUR', cost:'350 pts', desc:'Any standard station' },
-      { icon:'🎮', name:'PERIPHERAL UPGRADE', cost:'200 pts', desc:'Pro mouse + keyboard for session' },
-      { icon:'👑', name:'VIP SESSION', cost:'500 pts', desc:'Full VIP lounge access (3hrs)' },
-      { icon:'🍔', name:'MEAL COMBO', cost:'250 pts', desc:'Any meal + drink bundle' },
-      { icon:'🏆', name:'TOURNEY ENTRY', cost:'150 pts', desc:'Free entry to any weekly event' }
+      { icon:'☕', name:'FREE DRINK', cost:'100 pts', pts:100, desc:'Any drink from the menu' },
+      { icon:'⏱️', name:'1 FREE HOUR', cost:'350 pts', pts:350, desc:'Any standard station' },
+      { icon:'🎮', name:'PERIPHERAL UPGRADE', cost:'200 pts', pts:200, desc:'Pro mouse + keyboard for session' },
+      { icon:'👑', name:'VIP SESSION', cost:'500 pts', pts:500, desc:'Full VIP lounge access (3hrs)' },
+      { icon:'🍔', name:'MEAL COMBO', cost:'250 pts', pts:250, desc:'Any meal + drink bundle' },
+      { icon:'🏆', name:'TOURNEY ENTRY', cost:'150 pts', pts:150, desc:'Free entry to any weekly event' }
     ]
   }
 };
@@ -864,7 +870,7 @@ function renderSpecs() {
 
 // PRICING
 function renderPricing() {
-  document.getElementById('pricing-container').innerHTML = CAFE_DATA.pricing.map(p => `
+  document.getElementById('pricing-container').innerHTML = CAFE_DATA.pricing.map((p,pi) => `
     <div class="price-card ${p.featured?'featured':''} reveal">
       <div class="price-tier">${p.name}</div>
       <div class="price-amount"><sup>EGP</sup>${p.price}</div>
@@ -872,14 +878,14 @@ function renderPricing() {
       <ul class="price-features">
         ${p.features.map(f=>`<li class="${f.y?'yes':''}">${f.t}</li>`).join('')}
       </ul>
-      <a href="#booking" class="btn-book ${p.featured?'cta':''}">Reserve Now</a>
+      <a href="#booking" onclick="preselectStation(${pi})" class="btn-book ${p.featured?'cta':''}">Reserve Now</a>
     </div>
   `).join('');
 }
 
 // EVENTS
 function renderEvents() {
-  document.getElementById('events-container').innerHTML = CAFE_DATA.events.map(e => `
+  document.getElementById('events-container').innerHTML = CAFE_DATA.events.map((e,ei) => `
     <div class="event-card reveal">
       <div class="event-header">
         <div>
@@ -896,6 +902,7 @@ function renderEvents() {
         </div>
         <div class="event-desc">${e.desc}</div>
         <div class="event-tag">${e.tag}</div>
+        <button class="btn-register" onclick="registerEvent(${ei})">▸ REGISTER</button>
       </div>
     </div>
   `).join('');
@@ -938,26 +945,59 @@ function submitGameRequest() {
   document.getElementById('requestSent').style.display = 'flex';
   document.getElementById('gameRequestInput').value = '';
   showToast(`Game request for "${val}" submitted!`);
+  openWhatsApp('Game request: ' + val);
   setTimeout(()=>{ document.getElementById('requestSent').style.display='none'; },4000);
    }
       
+const WA_NUMBER = '201095115475';
+function openWhatsApp(text){
+  const url = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
+  const w = window.open(url, '_blank', 'noopener');
+  if(!w) window.location.href = url;
+}
+function validPhone(v){ return /^[+]?[0-9\s\-()]{7,18}$/.test(v.trim()); }
+function mark(el, ok){ el.classList.toggle('invalid', !ok); return ok; }
+
 function submitBooking() {
   const fname = document.getElementById('booking-fname');
   const lname = document.getElementById('booking-lname');
   const phone = document.getElementById('booking-phone');
   const date = document.getElementById('booking-date');
-
-  const selects = document.querySelectorAll('.booking-form select');
-  const message =
-    `New Reservation:%0A` +
-    `Name: ${fname.value.trim()} ${lname.value.trim()}%0A` +
-    `Phone: ${phone.value.trim()}%0A` +
-    `Date: ${date.value}%0A` +
-    `Station: ${document.getElementById('booking-station').value}%0A` +
-    `Duration: ${document.getElementById('booking-duration').value}`;
-  window.location.href = `https://wa.me/201095115475?text=${message}`;
+  const okAll = [
+    mark(fname, !!fname.value.trim()),
+    mark(phone, validPhone(phone.value)),
+    mark(date, !!date.value && date.value >= date.min)
+  ].every(Boolean);
+  if(!okAll){ showToast('Please add your name, a valid phone number and a date from today on.'); return; }
+  const notes = document.getElementById('booking-notes').value.trim();
+  const msg = 'New Reservation:\n' +
+    'Name: ' + (fname.value.trim() + ' ' + lname.value.trim()).trim() + '\n' +
+    'Phone: ' + phone.value.trim() + '\n' +
+    'Date: ' + date.value + '\n' +
+    'Time: ' + document.getElementById('booking-time').value + '\n' +
+    'Station: ' + document.getElementById('booking-station').value + '\n' +
+    'Duration: ' + document.getElementById('booking-duration').value +
+    (notes ? '\nNotes: ' + notes : '');
+  showToast('Opening WhatsApp to send your reservation…');
+  openWhatsApp(msg);
 }
-   
+
+function preselectStation(i){
+  const sel = document.getElementById('booking-station');
+  if(sel && sel.options[i]) sel.selectedIndex = i;
+}
+
+function registerEvent(i){
+  const e = CAFE_DATA.events[i];
+  const u = NX.user;
+  openWhatsApp('Event registration: ' + e.game + ' - ' + e.type + ' (' + e.date + ', ' + e.time + ')' + (u ? '\nName: ' + (u.displayName || u.email) : ''));
+  showToast('Opening WhatsApp to register for ' + e.game + '…');
+}
+
+function reserveStation(n, vip){
+  openModal('STATION ' + String(n).padStart(2,'0') + (vip ? ' (VIP)' : ''), vip ? 'VIP lounge station' : 'Main floor station', vip ? '👑' : '🖥️');
+}
+
 // MENU
 function renderMenu(category='Drinks') {
   const tabsEl = document.getElementById('menu-tabs-container');
@@ -991,22 +1031,23 @@ function switchTab(cat, btn) {
 // LOYALTY
 function renderLoyalty() {
   document.getElementById('loyalty-tiers').innerHTML = CAFE_DATA.loyalty.tiers.map(t=>`
-    <div class="tier-row ${t.current?'current':''} reveal">
+    <div class="tier-row ${t.name===NX.rank?'current':''} reveal">
       <div class="tier-dot" style="background:${t.color};box-shadow:0 0 8px ${t.color}40"></div>
       <div class="tier-info">
-        <div class="tier-name" style="color:${t.current?'var(--white)':'var(--gray)'}">${t.name} ${t.current ? '(CURRENT)' : ''}</div>
+        <div class="tier-name" style="color:${t.name===NX.rank?'var(--white)':'var(--gray)'}">${t.name} ${t.name===NX.rank ? '(CURRENT)' : ''}</div>
         <div class="tier-req">${t.req}</div>
       </div>
       <div class="tier-perk">${t.perk}</div>
     </div>
   `).join('');
 
-  document.getElementById('rewards-grid').innerHTML = CAFE_DATA.loyalty.rewards.map(r=>`
+  document.getElementById('rewards-grid').innerHTML = CAFE_DATA.loyalty.rewards.map((r,ri)=>`
     <div class="reward-card reveal">
       <div class="reward-icon">${r.icon}</div>
       <div class="reward-name">${r.name}</div>
       <div class="reward-cost">${r.cost}</div>
       <div class="reward-desc">${r.desc}</div>
+      <button class="btn-redeem" onclick="redeemReward(${ri})">REDEEM</button>
     </div>
   `).join('');
 }
@@ -1031,7 +1072,7 @@ function renderStations() {
     const vipClass = isVip ? 'vip' : '';
 
     html += `
-      <div class="station-cell ${stateClass} ${vipClass}">
+      <div class="station-cell ${stateClass} ${vipClass}" ${isOccupied ? 'title="Occupied"' : `title="Free - click to reserve" onclick="reserveStation(${i},${isVip})"`}>
         <div class="station-dot"></div>
         <div class="station-num">${i < 10 ? '0'+i : i}</div>
       </div>
@@ -1113,27 +1154,61 @@ function closeModal() {
 function confirmReserve() {
   const name = document.getElementById('modal-name');
   const phone = document.getElementById('modal-phone');
-  let valid = true;
-
-  [name, phone].forEach(field => {
-    if (!field.value.trim()) {
-      field.style.borderColor = 'var(--orange)';
-      valid = false;
-    } else {
-      field.style.borderColor = 'var(--border)';
-    }
-  });
-
-  if (!valid) {
-    showToast('Please fill in your name and phone number.');
+  const date = document.getElementById('modal-date');
+  const ok = [mark(name, !!name.value.trim()), mark(phone, validPhone(phone.value)), mark(date, !!date.value && date.value >= date.min)].every(Boolean);
+  if (!ok) {
+    showToast('Please fill in your name, a valid phone number and a date from today on.');
     return;
   }
-
-  const phone_val = phone.value || '+20 1XX XXX XXXX';
+  const title = document.getElementById('modal-station-title').innerText;
+  const info = document.getElementById('modal-station-info').innerText;
+  openWhatsApp('New Reservation:\nStation: ' + title + ' (' + info.trim() + ')\nName: ' + name.value.trim() + '\nPhone: ' + phone.value.trim() +
+    '\nDate: ' + date.value + '\nTime: ' + document.getElementById('modal-time').value + '\nDuration: ' + document.getElementById('modal-duration').value);
   document.getElementById('modal-form-wrap').style.display = 'none';
   document.getElementById('modal-success').style.display = 'block';
-  document.getElementById('confirmed-phone').innerText = phone_val;
-   }
+  document.getElementById('confirmed-phone').innerText = phone.value.trim();
+}
+
+// LOYALTY STATE (filled from Firebase when logged in)
+const NX = window.NX = { user:null, points:0, rank:'BRONZE' };
+function tierFor(pts){
+  const t = CAFE_DATA.loyalty.tiers; let cur = t[0];
+  t.forEach(x => { if(pts >= x.min) cur = x; });
+  return cur;
+}
+function updateLoyalty(){
+  const tiers = CAFE_DATA.loyalty.tiers;
+  const cur = tierFor(NX.points);
+  const idx = tiers.indexOf(cur), next = tiers[idx+1];
+  NX.rank = cur.name;
+  document.getElementById('loyalty-rank').innerText = 'RANK: ' + cur.name;
+  document.getElementById('loyalty-name').innerText = NX.user ? (NX.user.displayName || (NX.user.email||'').split('@')[0] || 'PLAYER').toUpperCase() : 'GUEST';
+  document.getElementById('loyalty-pts-display').innerText = NX.points.toLocaleString();
+  document.getElementById('loyalty-from').innerText = cur.name;
+  document.getElementById('loyalty-togo').innerText = next ? (next.min - NX.points).toLocaleString() + ' pts to ' + next.name : 'MAX RANK';
+  document.getElementById('loyalty-lo').innerText = cur.min.toLocaleString() + ' pts';
+  document.getElementById('loyalty-hi').innerText = next ? next.min.toLocaleString() + ' pts' : '—';
+  const pct = next ? Math.min(100, Math.max(0, (NX.points - cur.min) / (next.min - cur.min) * 100)) : 100;
+  document.getElementById('loyalty-bar').style.width = pct + '%';
+  document.getElementById('loyalty-hint').style.display = NX.user ? 'none' : 'block';
+  renderLoyalty();
+  document.querySelectorAll('#rewards-grid .reward-card').forEach(c => c.classList.add('visible'));
+  document.querySelectorAll('#loyalty-tiers .tier-row').forEach(c => c.classList.add('visible'));
+}
+function redeemReward(i){
+  const r = CAFE_DATA.loyalty.rewards[i];
+  if(!NX.user){ showToast('Log in to redeem rewards.'); setTimeout(()=>{ window.location.href='login.html'; }, 1200); return; }
+  if(NX.points < r.pts){ showToast('You need ' + (r.pts - NX.points) + ' more points for ' + r.name + '.'); return; }
+  openWhatsApp('Reward redemption: ' + r.name + ' (' + r.cost + ')\nName: ' + (NX.user.displayName || NX.user.email) + '\nEmail: ' + (NX.user.email || '') + '\nCurrent points: ' + NX.points);
+  showToast('Opening WhatsApp to claim ' + r.name + '…');
+}
+function setMinDates(){
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  const today = d.toISOString().split('T')[0];
+  ['booking-date','modal-date'].forEach(id => { const el = document.getElementById(id); if(el){ el.min = today; if(!el.value) el.value = today; } });
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+document.getElementById('reserveModal').addEventListener('click', e => { if(e.target.id === 'reserveModal') closeModal(); });
 
 // THEME TOGGLE
 document.getElementById('themeToggle').addEventListener('click', () => {
@@ -1142,11 +1217,19 @@ document.getElementById('themeToggle').addEventListener('click', () => {
   if(html.getAttribute('data-theme') === 'dark') {
     html.setAttribute('data-theme', 'light');
     btn.innerText = '🌙';
+    try{ localStorage.setItem('nx_theme','light'); }catch(e){}
   } else {
     html.setAttribute('data-theme', 'dark');
     btn.innerText = '☀️';
+    try{ localStorage.setItem('nx_theme','dark'); }catch(e){}
   }
 });
+try{
+  if(localStorage.getItem('nx_theme') === 'light'){
+    document.documentElement.setAttribute('data-theme','light');
+    document.getElementById('themeToggle').innerText = '🌙';
+  }
+}catch(e){}
 
 // CUSTOM CURSOR
 const cursor = document.getElementById('cursor');
@@ -1163,25 +1246,14 @@ window.onload = () => {
   renderEvents();
   renderGames();
   renderMenu();
-  renderLoyalty();
   renderStations();
   
   // Staggered animations
   setTimeout(initReveal, 100);
   setTimeout(animateNumbers, 300);
   
-  // Loyalty bar fill animation
-  setTimeout(() => {
-    document.getElementById('loyalty-bar').style.width = '65%';
-    let pts = 0;
-    let target = 2600;
-    let inc = target/40;
-    const t = setInterval(()=>{
-      pts += inc;
-      if(pts >= target) { clearInterval(t); pts=target; }
-      document.getElementById('loyalty-pts-display').innerText = Math.ceil(pts).toLocaleString();
-    }, 30);
-  }, 500);
+  setMinDates();
+  updateLoyalty();
   
   // Auto-refresh station map every 60 seconds
   setInterval(renderStations, 60000);
@@ -1248,17 +1320,22 @@ document.addEventListener('click', (e) => {
       document.getElementById('dropdown-name').innerText = displayName;
       document.getElementById('dropdown-email').innerText = user.email || user.phoneNumber || '';
 
+      window.NX.user = { uid: user.uid, displayName, email: user.email || user.phoneNumber || '' };
       try {
         const snap = await getDoc(doc(db, 'users', user.uid));
         if (snap.exists()) {
-          const pts = snap.data().loyaltyPoints || 0;
+          const pts = Number(snap.data().loyaltyPoints) || 0;
+          window.NX.points = pts;
           document.getElementById('dropdown-pts').innerText = pts.toLocaleString() + ' NEXUS PTS';
         }
       } catch(e) {}
+      window.updateLoyalty && window.updateLoyalty();
 
     } else {
       loginBtn.style.display = 'flex';
       userNav.style.display  = 'none';
+      window.NX.user = null; window.NX.points = 0;
+      window.updateLoyalty && window.updateLoyalty();
     }
   });
 
