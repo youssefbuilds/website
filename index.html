@@ -3,6 +3,7 @@ html
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXUS ARENA — PC Gaming Cafe</title>
@@ -1566,7 +1567,7 @@ document.addEventListener('click', (e) => {
       document.getElementById('nav-avatar').innerText    = initials;
       document.getElementById('nav-username').innerText  = displayName;
       document.getElementById('dropdown-name').innerText = displayName;
-      document.getElementById('dropdown-email').innerText = user.email || user.phoneNumber || '';
+      document.getElementById('dropdown-email').innerText = '';   // never show the email or phone under the name
       const adm = document.getElementById('nav-admin');
       if (adm) adm.style.display = (user.email === ADMIN_EMAIL && user.emailVerified) ? 'flex' : 'none';
 
@@ -1665,6 +1666,7 @@ button, input[type="button"], input[type="submit"], a[class*="btn"], [class*="bt
 .name-err { min-height:18px; font-size:.8rem; color:var(--orange); margin:6px 6px 0; }
 .name-actions { display:flex; gap:10px; margin-top:12px; justify-content:flex-end; }
 .name-actions button { padding:11px 22px; }
+#dropdown-email, .nav-dropdown-email { display:none !important; }
 @media (max-width:480px) { .nav-username { display:none; } .nav-user-btn { padding:7px 12px 7px 8px; gap:8px; } .avail-summary { gap:10px; } .avail-summary > * { padding-left:14px; padding-right:10px; } }
 @media (max-width:600px) { .menu-tabs { flex-wrap:wrap; overflow:visible; } .name-actions button { flex:1; } }
 </style>
