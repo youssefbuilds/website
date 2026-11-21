@@ -361,7 +361,7 @@ body::before { content:''; position:fixed; inset:0; background:repeating-linear-
 
       <div class="form-group">
         <label class="form-label">Display Name</label>
-        <input type="text" class="form-input" id="signup-name" placeholder="YourGamertag">
+        <input type="text" class="form-input" id="signup-name" placeholder="YourGamertag" maxlength="20" autocomplete="nickname">
       </div>
       <div class="form-group">
         <label class="form-label">Email Address</label>
@@ -497,7 +497,7 @@ body::before { content:''; position:fixed; inset:0; background:repeating-linear-
     if (!snap.exists()) {
       await setDoc(ref, {
         uid: user.uid,
-        displayName: user.displayName || extraData.displayName || "Player",
+        displayName: (function(){ const n = String(user.displayName || extraData.displayName || '').replace(/\s+/g,' ').trim(); return (n && n.indexOf('@') < 0) ? Array.from(n).slice(0,20).join('') : "Player"; })(),
         email: user.email || "",
         phone: user.phoneNumber || "",
         loyaltyPoints: 0,
@@ -517,7 +517,7 @@ body::before { content:''; position:fixed; inset:0; background:repeating-linear-
     document.querySelectorAll('.auth-tabs').forEach(t => t.style.display = 'none');
     const successEl = document.getElementById('auth-success');
     successEl.style.display = 'block';
-    document.getElementById('success-name').innerText = user.displayName || user.email || "Player";
+    { const n = String(user.displayName || '').replace(/\s+/g,' ').trim(); document.getElementById('success-name').innerText = (n && n.indexOf('@') < 0) ? Array.from(n).slice(0,20).join('') : "Player"; }
     // Animate redirect bar then navigate
     setTimeout(() => {
       document.getElementById('redirect-fill').style.width = '100%';
@@ -569,11 +569,13 @@ body::before { content:''; position:fixed; inset:0; background:repeating-linear-
 
   // ── EMAIL SIGN UP ──
   window.signUpWithEmail = async function() {
-    const name = document.getElementById('signup-name').value.trim();
+    const name = Array.from(document.getElementById('signup-name').value.replace(/\s+/g,' ').trim()).slice(0,20).join('').trim();
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
     const confirm = document.getElementById('signup-confirm').value;
     if (!name) { showError('signup', 'Please enter a display name.'); return; }
+    if (name.length < 2) { showError('signup', 'Display name needs at least 2 characters.'); return; }
+    if (name.indexOf('@') >= 0) { showError('signup', 'Use a gamertag as your display name, not an email address.'); return; }
     if (!email) { showError('signup', 'Please enter your email.'); return; }
     if (password.length < 8) { showError('signup', 'Password must be at least 8 characters.'); return; }
     if (password !== confirm) { showError('signup', 'Passwords do not match.'); return; }
