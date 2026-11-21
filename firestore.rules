@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- helpers ----------
     // Only the owner, with a VERIFIED email, is admin.
     function isAdmin() {
       return request.auth != null
@@ -9,48 +10,150 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
     function signedIn() { return request.auth != null; }
+    function userDoc(uid) { return /databases/$(database)/documents/users/$(uid); }
 
-    // Customer profiles and loyalty points
+    // Trusted reward catalog. Prices live HERE, not in anything a customer sends.
+    // To change a price or add a reward, edit this map AND the list in index.html, then republish.
+    function rewardCost(id) {
+      return {
+        'drink': 100, 'hour': 350, 'upgrade': 200,
+        'vip': 500, 'meal': 250, 'tourney': 150
+      }.get(id, null);
+    }
+    function rewardName(id) {
+      return {
+        'drink': 'FREE DRINK', 'hour': '1 FREE HOUR', 'upgrade': 'PERIPHERAL UPGRADE',
+        'vip': 'VIP SESSION', 'meal': 'MEAL COMBO', 'tourney': 'TOURNEY ENTRY'
+      }.get(id, null);
+    }
+
+    // ---------- customer profiles and loyalty points ----------
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      // new accounts always start at 0 points
+
+      // new accounts always start at zero, BRONZE, and only known fields
       allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.loyaltyPoints == 0;
-      // customers can edit their profile but never their own points or rank
+        && request.resource.data.keys().hasOnly(
+             ['uid','displayName','email','phone','loyaltyPoints','rank','totalHours','bookings','createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.loyaltyPoints == 0
+        && request.resource.data.rank == 'BRONZE'
+        && request.resource.data.totalHours == 0
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200;
+
+      // customers may change only their display name and phone, never points, rank or hours
       allow update: if isAdmin()
         || (signedIn() && request.auth.uid == uid
-            && request.resource.data.loyaltyPoints == resource.data.loyaltyPoints
-            && request.resource.data.rank == resource.data.rank);
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','phone','updatedAt'])
+            && request.resource.data.displayName is string
+            && request.resource.data.displayName.size() <= 80);
       allow delete: if isAdmin();
     }
 
-    // Booking requests made by logged-in customers
+    // ---------- bookings ----------
     match /bookings/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+
+      // customers create their own PENDING booking, with every field checked
       allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['uid','email','status','createdAt','name','phone','date','time','station','duration','notes','points'])
+        && request.resource.data.keys().hasAll(
+             ['uid','email','status','createdAt','name','phone','date','time','station','duration'])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'pending';
-      allow update: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid
-            && resource.data.status == 'pending'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-            && request.resource.data.status == 'cancelled');
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.email is string && request.resource.data.email.size() <= 200
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.phone is string
+        && request.resource.data.phone.matches('^(\\+20|0)1[0125][0-9]{8}$')
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && request.resource.data.time in
+             ['10:00 AM','12:00 PM','2:00 PM','4:00 PM','6:00 PM','8:00 PM','10:00 PM']
+        && request.resource.data.duration in
+             ['1 Hour','2 Hours','3 Hours','4 Hours','5+ Hours','All Night (8hrs)']
+        && request.resource.data.station is string
+        && request.resource.data.station.size() > 0 && request.resource.data.station.size() <= 120
+        && (!('notes' in request.resource.data)
+            || (request.resource.data.notes is string && request.resource.data.notes.size() <= 300))
+        && (!('points' in request.resource.data)
+            || (request.resource.data.points is int
+                && request.resource.data.points >= 0 && request.resource.data.points <= 80));
+
+      allow update: if
+        // customer: can only cancel their own pending booking
+        (signedIn() && resource.data.uid == request.auth.uid
+          && resource.data.status == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+          && request.resource.data.status == 'cancelled')
+        ||
+        // admin: only status moves (plus pointsAwarded on completion), and only forward
+        (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','pointsAwarded','updatedAt'])
+          && (
+            // pending -> confirmed | cancelled
+            (resource.data.status == 'pending'
+              && request.resource.data.status in ['confirmed','cancelled']
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+            ||
+            // confirmed -> cancelled
+            (resource.data.status == 'confirmed'
+              && request.resource.data.status == 'cancelled'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+            ||
+            // pending or confirmed -> completed: points awarded once, in the same batch as the customer's balance
+            (resource.data.status in ['pending','confirmed']
+              && request.resource.data.status == 'completed'
+              && request.resource.data.pointsAwarded is int
+              && request.resource.data.pointsAwarded >= 0
+              && request.resource.data.pointsAwarded <= 200
+              && getAfter(userDoc(resource.data.uid)).data.loyaltyPoints
+                   == get(userDoc(resource.data.uid)).data.loyaltyPoints + request.resource.data.pointsAwarded)
+          ));
       allow delete: if isAdmin();
     }
 
-    // Reward redemption requests (admin approves and deducts points)
+    // ---------- reward redemptions ----------
     match /redemptions/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+
+      // the price and name must match the trusted catalog above
       allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid','email','rewardId','reward','cost','status','createdAt'])
+        && request.resource.data.keys().hasAll(['uid','rewardId','reward','cost','status','createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.status == 'pending'
-        && request.resource.data.cost is number
-        && request.resource.data.cost > 0
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.loyaltyPoints >= request.resource.data.cost;
-      allow update, delete: if isAdmin();
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.rewardId is string
+        && rewardCost(request.resource.data.rewardId) != null
+        && request.resource.data.cost == rewardCost(request.resource.data.rewardId)
+        && request.resource.data.reward == rewardName(request.resource.data.rewardId)
+        && (!('email' in request.resource.data)
+            || (request.resource.data.email is string && request.resource.data.email.size() <= 200))
+        && get(userDoc(request.auth.uid)).data.loyaltyPoints >= request.resource.data.cost;
+
+      // admin: pending -> rejected, or pending -> approved only together with the exact points deduction
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+        && (
+          request.resource.data.status == 'rejected'
+          || (request.resource.data.status == 'approved'
+              && rewardCost(resource.data.rewardId) != null
+              && resource.data.cost == rewardCost(resource.data.rewardId)
+              && getAfter(userDoc(resource.data.uid)).data.loyaltyPoints
+                   == get(userDoc(resource.data.uid)).data.loyaltyPoints - rewardCost(resource.data.rewardId)
+              && get(userDoc(resource.data.uid)).data.loyaltyPoints >= rewardCost(resource.data.rewardId))
+        );
+      allow delete: if isAdmin();
     }
 
-    // Public site content, editable only by the admin
+    // ---------- public site content, editable only by the admin ----------
     match /menu/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /events/{id}  { allow read: if true; allow write: if isAdmin(); }
     match /gallery/{id} { allow read: if true; allow write: if isAdmin(); }
