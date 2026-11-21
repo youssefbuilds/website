@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>NEXUS ARENA — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#050810; --bg2:#080d1a; --bg3:#0d1525; --cyan:#00f5ff; --cyan-dim:rgba(0,245,255,.13); --cyan-glow:rgba(0,245,255,.4); --orange:#ff6b2b; --orange-dim:rgba(255,107,43,.15); --white:#e8eaf0; --gray:#6b7a99; --card:rgba(13,21,37,.92); --border:rgba(0,245,255,.14); --hot:rgba(0,245,255,.5); --ok:#00f5c4; --err:#ff4d6d; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--white); font-family:'Rajdhani',sans-serif; min-height:100vh; }
+body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,245,255,.012) 2px,rgba(0,245,255,.012) 4px); pointer-events:none; }
+a { color:var(--cyan); }
+button { font-family:'Orbitron',monospace; cursor:pointer; border-radius:999px; transition:all .2s; }
+.btn { background:var(--cyan); color:var(--bg); border:none; font-weight:700; font-size:.66rem; letter-spacing:2px; padding:11px 22px; text-transform:uppercase; white-space:nowrap; }
+.btn:hover { box-shadow:0 0 22px var(--cyan-glow); transform:translateY(-1px); }
+.btn.ghost { background:transparent; color:var(--cyan); border:1px solid var(--hot); }
+.btn.ghost:hover { background:var(--cyan-dim); box-shadow:none; }
+.btn.danger { background:transparent; color:var(--err); border:1px solid rgba(255,77,109,.5); }
+.btn.danger:hover { background:rgba(255,77,109,.1); box-shadow:none; }
+.btn.sm { padding:7px 14px; font-size:.58rem; }
+.btn:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+header { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 4%; background:rgba(5,8,16,.92); backdrop-filter:blur(18px); border-bottom:1px solid var(--border); }
+.logo { font-family:'Orbitron',monospace; font-weight:900; letter-spacing:4px; font-size:1.1rem; text-decoration:none; color:var(--white); }
+.logo span { color:var(--cyan); } .logo small { font-family:'Share Tech Mono',monospace; font-size:.6rem; letter-spacing:2px; color:var(--orange); margin-left:10px; }
+.who { display:flex; align-items:center; gap:12px; font-family:'Share Tech Mono',monospace; font-size:.7rem; color:var(--gray); }
+.tabs { display:flex; gap:8px; overflow-x:auto; padding:18px 4% 4px; }
+.tab { background:transparent; border:1px solid var(--border); color:var(--gray); font-size:.62rem; letter-spacing:2px; padding:10px 20px; white-space:nowrap; text-transform:uppercase; }
+.tab.active { color:var(--cyan); border-color:var(--cyan); background:var(--cyan-dim); }
+.tab .n { display:inline-block; min-width:18px; margin-left:8px; padding:1px 7px; border-radius:999px; background:var(--orange); color:#fff; font-size:.55rem; }
+main { padding:20px 4% 80px; max-width:1280px; margin:0 auto; }
+h2 { font-family:'Orbitron',monospace; font-size:1rem; letter-spacing:3px; margin-bottom:6px; }
+.sub { color:var(--gray); font-size:.92rem; margin-bottom:20px; }
+.bar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; }
+.rows { display:flex; flex-direction:column; gap:10px; }
+.row { display:grid; gap:12px; align-items:center; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 18px; }
+.row .main { font-weight:600; font-size:1.02rem; } .row .meta { font-family:'Share Tech Mono',monospace; font-size:.68rem; color:var(--gray); margin-top:3px; line-height:1.6; }
+.row .acts { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.r-book { grid-template-columns:1.4fr 1.6fr auto auto; } .r-menu, .r-ev, .r-user, .r-red { grid-template-columns:1fr auto; }
+.pill { display:inline-block; padding:3px 12px; border-radius:999px; font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:1px; background:var(--orange-dim); color:var(--orange); text-transform:uppercase; white-space:nowrap; }
+.pill.confirmed { background:rgba(0,150,255,.15); color:#4db8ff; } .pill.completed, .pill.approved { background:var(--cyan-dim); color:var(--cyan); } .pill.cancelled, .pill.rejected { background:rgba(255,255,255,.07); color:var(--gray); }
+.cat { font-family:'Orbitron',monospace; font-size:.7rem; letter-spacing:3px; color:var(--cyan); margin:22px 0 10px; }
+.gal { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+.gal .g { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+.gal img { width:100%; height:140px; object-fit:cover; display:block; background:var(--bg3); }
+.gal .gi { padding:12px 14px; } .gal .gt { font-weight:600; margin-bottom:8px; }
+.empty { text-align:center; color:var(--gray); padding:38px 16px; border:1px dashed var(--border); border-radius:16px; }
+.empty .btn { margin-top:14px; }
+.search { width:100%; max-width:340px; background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:999px; color:var(--white); padding:10px 18px; font-family:'Rajdhani',sans-serif; font-size:.95rem; outline:none; }
+.search:focus, .fi:focus { border-color:var(--cyan); }
+/* auth */
+.gate { max-width:420px; margin:12vh auto 0; padding:0 18px; }
+.gate .card { padding:30px; }
+.gate h1 { font-family:'Orbitron',monospace; font-size:1.05rem; letter-spacing:3px; margin-bottom:6px; }
+.fl { display:block; font-family:'Share Tech Mono',monospace; font-size:.64rem; letter-spacing:2px; color:var(--gray); text-transform:uppercase; margin:14px 0 6px; }
+.fi { width:100%; background:rgba(0,0,0,.35); border:1px solid var(--border); border-radius:12px; color:var(--white); padding:11px 14px; font-family:'Rajdhani',sans-serif; font-size:1rem; outline:none; }
+textarea.fi { min-height:76px; resize:vertical; } select.fi option { background:#0d1525; }
+.msg { font-family:'Share Tech Mono',monospace; font-size:.72rem; margin-top:14px; padding:10px 14px; border-radius:12px; display:none; line-height:1.6; }
+.msg.err { display:block; background:rgba(255,77,109,.1); color:var(--err); border:1px solid rgba(255,77,109,.35); }
+.msg.ok { display:block; background:var(--cyan-dim); color:var(--cyan); border:1px solid var(--border); }
+.link { background:none; border:none; color:var(--gray); font-family:'Share Tech Mono',monospace; font-size:.66rem; letter-spacing:1px; text-decoration:underline; padding:8px 0; }
+/* modal */
+.ov { position:fixed; inset:0; z-index:300; background:rgba(2,4,10,.82); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:18px; overflow-y:auto; }
+.dlg { width:100%; max-width:520px; background:var(--bg3); border:1px solid var(--hot); border-radius:20px; padding:26px; margin:auto; }
+.dlg h3 { font-family:'Orbitron',monospace; font-size:.85rem; letter-spacing:3px; margin-bottom:4px; } .dlg .hint { color:var(--gray); font-size:.85rem; margin-top:4px; }
+.dlg .acts { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+.toast { position:fixed; bottom:24px; left:50%; transform:translate(-50%,90px); background:var(--bg3); border:1px solid var(--cyan); color:var(--cyan); border-radius:999px; padding:12px 24px; font-family:'Share Tech Mono',monospace; font-size:.76rem; z-index:400; opacity:0; transition:all .35s; max-width:92vw; }
+.toast.show { transform:translate(-50%,0); opacity:1; } .toast.bad { border-color:var(--err); color:var(--err); }
+.hide { display:none !important; }
+@media (max-width:760px) { .r-book { grid-template-columns:1fr; } .row .acts { justify-content:flex-start; } header { padding:12px 4%; } }
+</style>
+</head>
+<body>
+
+<!-- SIGN-IN GATE -->
+<div class="gate" id="gate">
+  <div class="card">
+    <a class="logo" href="index.html"><span>NEX</span>US ARENA<small>ADMIN</small></a>
+    <div id="gate-body" style="margin-top:22px"></div>
+    <div class="msg" id="gate-msg"></div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="app" class="hide">
+  <header>
+    <a class="logo" href="index.html"><span>NEX</span>US ARENA<small>ADMIN</small></a>
+    <div class="who"><span id="who"></span><a href="index.html">View site</a><button class="btn ghost sm" id="btn-out">Sign out</button></div>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, updateDoc, onSnapshot, runTransaction, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCRywltr8cfnolmKKv2EHXPYIjLvw3bHtM",
+  authDomain: "nexus-arena-13710.firebaseapp.com",
+  projectId: "nexus-arena-13710",
+  storageBucket: "nexus-arena-13710.firebasestorage.app",
+  messagingSenderId: "1074459989810",
+  appId: "1:1074459989810:web:4b60c28fccda4595c0292b"
+};
+const ADMIN_EMAIL = "youssef.ahmed4990@gmail.com";
+const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app);
+
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m, bad){ const t=$('#toast'); t.textContent=m; t.className='toast show'+(bad?' bad':''); clearTimeout(toast.t); toast.t=setTimeout(()=>t.className='toast',3200); }
+const TIERS = [['BRONZE',0],['SILVER',500],['GOLD',1000],['PLATINUM',2000],['DIAMOND',5000]];
+const rankFor = p => TIERS.filter(t => p >= t[1]).pop()[0];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+/* ---------------- DEFAULTS (same as the public site, used for one-click import) ---------------- */
+const _src = {
+  events: [
+    { game:'VALORANT', type:'5v5 Tournament', prize:'EGP 2,000', mode:'weekly', weekday:5, time:'7:00 PM', slots:'16 Teams', desc:'Double-elimination bracket. All ranks welcome, seeded fairly.' },
+    { game:'FC 25', type:'1v1 Season League', prize:'EGP 1,200', mode:'weekly', weekday:6, time:'4:00 PM', slots:'32 Players', desc:'Monthly season with weekly match days. Full standings and stats.' },
+    { game:'CS2', type:'Open Bracket', prize:'EGP 3,500', mode:'weekly', weekday:4, time:'6:00 PM', slots:'Open', desc:'Counter-Strike 2 open tournament. 360Hz stations pre-warmed.' }
+  ],
+
+  gallery: [
+    { title:'Main Floor, 42 Stations', url:'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1000&q=70' },
+    { title:'Tournament Zone', url:'https://images.unsplash.com/photo-1661347561879-c9ab77bac89f?auto=format&fit=crop&w=900&q=70' },
+    { title:'VIP Lounge', url:'https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&fit=crop&w=900&q=70' },
+    { title:'The Fuel Bar', url:'https://images.unsplash.com/photo-1560689189-65b6ed6228e7?auto=format&fit=crop&w=900&q=70' },
+    { title:'Peripherals Wall', url:'https://images.unsplash.com/photo-1696710257827-75e2e5954059?auto=format&fit=crop&w=900&q=70' }
+  ],
+
+  menu: {
+    Drinks:[
+      { name:'Nexus Fuel ⚡', desc:'House energy drink, mint and taurine', price:'80' },
+      { name:'G-FUEL Can', desc:'Imported G-FUEL, assorted flavors', price:'65' },
+      { name:'Pixel Lemonade', desc:'Fresh lemon, blue butterfly pea syrup', price:'40' },
+      { name:'Cold Brew', desc:'Double-shot over ice', price:'55' },
+      { name:'Monster / Red Bull', desc:'Imported, multiple flavors', price:'70' },
+      { name:'Soft Drinks / Water', desc:'Chilled still or sparkling', price:'20' }
+    ],
+    Snacks:[
+      { name:'Loaded Nachos 🧀', desc:'Cheddar sauce, jalapeños, sour cream', price:'85' },
+      { name:'Chicken Pops', desc:'Crispy bites + dipping sauce', price:'75' },
+      { name:'Mozzarella Sticks', desc:'Golden-fried with marinara', price:'70' },
+      { name:'GG Wrap 🌯', desc:'Grilled chicken, ranch, toasted', price:'90' }
+    ],
+    Meals:[
+      { name:'Nexus Burger 🍔', desc:'Double smash patty, cheddar, special sauce', price:'130' },
+      { name:'XP Bowl', desc:'Teriyaki chicken, rice, pickled veggies', price:'110' },
+      { name:'Clan Pizza 🍕', desc:'Personal 8-slice, 3 toppings', price:'145' },
+      { name:'Pasta Power-Up', desc:'Arrabiata or carbonara + garlic bread', price:'100' }
+    ],
+    Bundles:[
+      { name:'Carry Bundle 🏆', desc:'Any meal + energy drink + snack', price:'190' },
+      { name:'Squad Platter', desc:'Nachos, chicken, fries, mozz — serves 4', price:'270' },
+      { name:'Caffeine Stack ☕', desc:'Cold brew + G-FUEL + energy bar', price:'140' }
+    ]
+  }
+};
+const DEFAULTS = { events:_src.events, gallery:_src.gallery.map((g,i)=>Object.assign({order:i},g)),
+  menu:Object.keys(_src.menu).flatMap((cat,ci)=>_src.menu[cat].map((i,n)=>({cat,name:i.name,desc:i.desc,price:Number(i.price),order:ci*100+n}))) };
+
+/* ---------------- AUTH GATE ---------------- */
+function gateMsg(t, ok){ const m=$('#gate-msg'); m.textContent=t||''; m.className='msg'+(t?(ok?' ok':' err'):''); }
+function showGate(html){ $('#app').classList.add('hide'); $('#gate').classList.remove('hide'); $('#gate-body').innerHTML = html; }
+function loginForm(mode){
+  const signup = mode === 'signup';
+  showGate(`
+    <h1>${signup ? 'CREATE ADMIN ACCOUNT' : 'ADMIN SIGN IN'}</h1>
+    <p class="sub" style="margin:6px 0 0">${signup ? 'Only the owner email can be used. You will get a verification email.' : 'Owner access only.'}</p>
+    <label class="fl">Email</label><input class="fi" id="g-email" type="email" autocomplete="username" placeholder="${ADMIN_EMAIL}">
+    <label class="fl">Password</label><input class="fi" id="g-pass" type="password" autocomplete="${signup?'new-password':'current-password'}" placeholder="${signup?'At least 8 characters':'Password'}">
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="g-go">${signup ? 'Create account' : 'Sign in'}</button></div>
+    <div style="margin-top:10px">
+      <button class="link" id="g-switch">${signup ? 'I already have an account' : 'First time? Create the admin account'}</button><br>
+      ${signup ? '' : '<button class="link" id="g-reset">Forgot password</button>'}
+    </div>`);
+  $('#g-switch').onclick = () => { gateMsg(''); loginForm(signup ? 'login' : 'signup'); };
+  const r = $('#g-reset'); if (r) r.onclick = async () => {
+    const e = $('#g-email').value.trim(); if (!e) return gateMsg('Type your email above first.');
+    try { await sendPasswordResetEmail(auth, e); gateMsg('If that account exists, a reset email is on its way.', true); } catch(x){ gateMsg('Could not send the reset email.'); }
+  };
+  const go = async () => {
+    const e = $('#g-email').value.trim(), p = $('#g-pass').value;
+    if (!e || !p) return gateMsg('Enter your email and password.');
+    if (e.toLowerCase() !== ADMIN_EMAIL) return gateMsg('This email is not allowed to use the admin panel.');
+    $('#g-go').disabled = true; gateMsg('');
+    try {
+      if (signup) {
+        if (p.length < 8) { $('#g-go').disabled=false; return gateMsg('Password must be at least 8 characters.'); }
+        const c = await createUserWithEmailAndPassword(auth, e, p);
+        await sendEmailVerification(c.user);
+      } else { await signInWithEmailAndPassword(auth, e, p); }
+    } catch(x) {
+      $('#g-go').disabled = false;
+      const map = {'auth/email-already-in-use':'That account already exists. Use "I already have an account".','auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong password.','auth/user-not-found':'No account yet. Use "Create the admin account".','auth/too-many-requests':'Too many attempts, wait a minute.','auth/weak-password':'Password is too weak.'};
+      gateMsg(map[x.code] || x.message);
+    }
+  };
+  $('#g-go').onclick = go; $('#g-pass').onkeydown = ev => { if (ev.key === 'Enter') go(); };
+}
+function verifyScreen(user){
+  showGate(`
+    <h1>VERIFY YOUR EMAIL</h1>
+    <p class="sub" style="margin:8px 0 0">Admin access needs a verified email. We sent a link to <b>${esc(user.email)}</b>. Open it, then come back and press the button.</p>
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="v-check">I verified it</button><button class="btn ghost" id="v-resend">Resend email</button><button class="btn ghost" id="v-out">Sign out</button></div>`);
+  $('#v-out').onclick = () => signOut(auth);
+  $('#v-resend').onclick = async () => { try { await sendEmailVerification(auth.currentUser); gateMsg('Verification email sent. Check inbox and spam.', true); } catch(x){ gateMsg('Wait a minute before asking again.'); } };
+  $('#v-check').onclick = async () => { await auth.currentUser.reload(); if (auth.currentUser.emailVerified) { await auth.currentUser.getIdToken(true); location.reload(); } else gateMsg('Not verified yet. Open the link in the email first.'); };
+}
+function deniedScreen(user){
+  showGate(`<h1>NOT ALLOWED</h1><p class="sub" style="margin:8px 0 0"><b>${esc(user.email || 'This account')}</b> does not have admin access.</p><div style="margin-top:20px"><button class="btn" id="d-out">Sign out</button></div>`);
+  $('#d-out').onclick = () => signOut(auth);
+}
+let unsubs = [];
+onAuthStateChanged(auth, user => {
+  unsubs.forEach(u => u()); unsubs = []; gateMsg('');
+  if (!user) return loginForm('login');
+  if ((user.email || '').toLowerCase() !== ADMIN_EMAIL) return deniedScreen(user);
+  if (!user.emailVerified) return verifyScreen(user);
+  user.getIdToken(true).then(startApp);
+});
+$('#btn-out').onclick = () => signOut(auth);
+
+/* ---------------- DATA ---------------- */
+const D = { bookings:[], redemptions:[], users:[], menu:[], events:[], gallery:[] };
+let tab = 'bookings', filterText = '';
+const TABS = [['bookings','Bookings'],['redemptions','Redemptions'],['customers','Customers'],['menu','Menu'],['events','Events'],['gallery','Gallery']];
+function startApp(){
+  $('#gate').classList.add('hide'); $('#app').classList.remove('hide');
+  $('#who').textContent = auth.currentUser.email;
+  Object.keys(D).forEach(k => {
+    const coll = collection(db, k === 'customers' ? 'users' : k);
+    unsubs.push(onSnapshot(coll, snap => {
+      D[k] = snap.docs.map(d => Object.assign({ id:d.id }, d.data()));
+      render();
+    }, err => { toast('Cannot read ' + k + ': ' + (err.code || err.message) + '. Publish the Firestore rules first.', true); }));
+  });
+  render();
+}
+const ms = v => (v && v.toMillis) ? v.toMillis() : 0;
+const fmtDT = v => { const t = ms(v); return t ? new Date(t).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : ''; };
+
+/* ---------------- DIALOG ---------------- */
+function ask(title, fields, opts = {}){
+  return new Promise(resolve => {
+    const ov = document.createElement('div'); ov.className = 'ov';
+    const vals = {}; fields.forEach(f => vals[f.k] = f.value ?? '');
+    const draw = () => {
+      ov.innerHTML = `<div class="dlg"><h3>${esc(title)}</h3>${opts.hint ? `<div class="hint">${esc(opts.hint)}</div>` : ''}<form id="f">` +
+        fields.filter(f => !f.showIf || f.showIf(vals)).map(f => {
+          const v = esc(vals[f.k]);
+          let inp;
+          if (f.type === 'select') inp = `<select class="fi" data-k="${f.k}">${f.options.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(vals[f.k]) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+          else if (f.type === 'textarea') inp = `<textarea class="fi" data-k="${f.k}">${v}</textarea>`;
+          else inp = `<input class="fi" data-k="${f.k}" type="${f.type || 'text'}" value="${v}" ${f.list ? `list="dl-${f.k}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}>${f.list ? `<datalist id="dl-${f.k}">${f.list.map(o => `<option value="${esc(o)}">`).join('')}</datalist>` : ''}`;
+          return `<label class="fl">${esc(f.label)}${f.required ? ' *' : ''}</label>${inp}${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}`;
+        }).join('') + `<div class="msg" id="dm"></div><div class="acts"><button type="button" class="btn ghost" id="dc">Cancel</button><button class="btn" id="ds">${esc(opts.ok || 'Save')}</button></div></form></div>`;
+      ov.querySelectorAll('[data-k]').forEach(el => {
+        el.oninput = () => { vals[el.dataset.k] = el.value; };
+        el.onchange = () => { vals[el.dataset.k] = el.value; if (el.tagName === 'SELECT' && fields.some(f => f.showIf)) draw(); };
+      });
+      ov.querySelector('#dc').onclick = () => { ov.remove(); resolve(null); };
+      ov.querySelector('#f').onsubmit = e => {
+        e.preventDefault();
+        for (const f of fields) { if (f.showIf && !f.showIf(vals)) continue; if (f.required && String(vals[f.k]).trim() === '') { const m = ov.querySelector('#dm'); m.className = 'msg err'; m.textContent = f.label + ' is required.'; return; } }
+        const out = {}; fields.forEach(f => { if (!f.showIf || f.showIf(vals)) out[f.k] = f.type === 'number' ? Number(vals[f.k]) : String(vals[f.k]).trim(); });
+        ov.remove(); resolve(out);
+      };
+    };
+    draw(); document.body.appendChild(ov);
+    const first = ov.querySelector('[data-k]'); if (first) first.focus();
+  });
+}
+const confirmBox = (title, text, ok) => ask(title, [], { hint:text, ok:ok || 'Confirm' });
+
+/* ---------------- ACTIONS ---------------- */
+async function bumpUser(tx, uid, delta, extra){
+  const ref = doc(db, 'users', uid), snap = await tx.get(ref);
+  const cur = snap.exists() ? (Number(snap.data().loyaltyPoints) || 0) : 0;
+  const next = Math.max(0, cur + delta);
+  return { ref, cur, next, apply: () => tx.set(ref, Object.assign({ loyaltyPoints:next, rank:rankFor(next) }, extra || {}), { merge:true }) };
+}
+async function setBookingStatus(b, status){
+  await updateDoc(doc(db, 'bookings', b.id), { status, updatedAt: serverTimestamp() });
+  toast('Booking ' + status);
+}
+async function completeBooking(b){
+  const r = await ask('Complete booking', [{ k:'pts', label:'Points to award', type:'number', value:b.points || 10, required:true, hint:'Default is 10 points per booked hour. Change it if needed.' }], { hint:`${b.name} · ${b.date} ${b.time} · ${b.duration}`, ok:'Complete and award' });
+  if (!r || isNaN(r.pts) || r.pts < 0) return;
+  try {
+    await runTransaction(db, async tx => {
+      const bref = doc(db, 'bookings', b.id), bs = await tx.get(bref);
+      if (bs.data().status === 'completed') throw new Error('already completed');
+      const u = await bumpUser(tx, b.uid, r.pts, { displayName: b.name || undefined });
+      tx.update(bref, { status:'completed', pointsAwarded:r.pts, updatedAt: serverTimestamp() });
+      u.apply();
+    });
+    toast('Completed. ' + r.pts + ' points added to the customer.');
+  } catch(e) { toast('Could not complete: ' + (e.message || e.code), true); }
+}
+async function approveRedemption(x){
+  const ok = await confirmBox('Approve redemption', `${x.email || x.uid} gets "${x.reward}" and ${x.cost} points are deducted.`, 'Approve');
+  if (!ok) return;
+  try {
+    await runTransaction(db, async tx => {
+      const rref = doc(db, 'redemptions', x.id), rs = await tx.get(rref);
+      if (rs.data().status !== 'pending') throw new Error('already handled');
+      const u = await bumpUser(tx, x.uid, -x.cost);
+      if (u.cur < x.cost) throw new Error('customer has only ' + u.cur + ' points');
+      tx.update(rref, { status:'approved', updatedAt: serverTimestamp() });
+      u.apply();
+    });
+    toast('Approved and points deducted.');
+  } catch(e) { toast('Could not approve: ' + (e.message || e.code), true); }
+}
+async function rejectRedemption(x){ await updateDoc(doc(db, 'redemptions', x.id), { status:'rejected', updatedAt: serverTimestamp() }); toast('Rejected'); }
+async function adjustPoints(u){
+  const r = await ask('Adjust points', [{ k:'d', label:'Add or remove points', type:'number', value:0, required:true, hint:'Use a negative number to remove points.' }], { hint:`${u.displayName || u.email} currently has ${u.loyaltyPoints || 0} points.`, ok:'Apply' });
+  if (!r || !r.d) return;
+  try { await runTransaction(db, async tx => { const x = await bumpUser(tx, u.id, r.d); x.apply(); }); toast('Points updated.'); } catch(e) { toast('Failed: ' + (e.message || e.code), true); }
+}
+
+/* ---- CRUD for menu / events / gallery ---- */
+const menuFields = (item = {}) => [
+  { k:'cat', label:'Category', value:item.cat || 'Drinks', required:true, list:[...new Set(D.menu.map(i => i.cat))].concat(['Drinks','Snacks','Meals','Bundles']).filter((v,i,a) => a.indexOf(v) === i) },
+  { k:'name', label:'Name', value:item.name, required:true },
+  { k:'desc', label:'Description', value:item.desc },
+  { k:'price', label:'Price (EGP)', type:'number', value:item.price, required:true },
+  { k:'order', label:'Sort order', type:'number', value:item.order ?? 0, hint:'Lower numbers show first.' }
+];
+const eventFields = (e = {}) => [
+  { k:'game', label:'Game', value:e.game, required:true },
+  { k:'type', label:'Format', value:e.type, required:true, placeholder:'5v5 Tournament' },
+  { k:'prize', label:'Prize', value:e.prize, required:true, placeholder:'EGP 2,000' },
+  { k:'mode', label:'Repeats', type:'select', value:e.mode || 'weekly', options:[['weekly','Every week'],['once','One date only']] },
+  { k:'weekday', label:'Day of week', type:'select', value:e.weekday ?? 5, options:DAYS.map((d,i) => [i,d]), showIf:v => v.mode !== 'once' },
+  { k:'date', label:'Date', type:'date', value:e.date || '', required:true, showIf:v => v.mode === 'once' },
+  { k:'time', label:'Start time', value:e.time || '7:00 PM', required:true, hint:'Format: 7:00 PM' },
+  { k:'slots', label:'Slots', value:e.slots || 'Open' },
+  { k:'desc', label:'Description', type:'textarea', value:e.desc }
+];
+const galleryFields = (g = {}) => [
+  { k:'title', label:'Caption', value:g.title, required:true },
+  { k:'url', label:'Image link', type:'url', value:g.url, required:true, hint:'Paste a direct image link (https://...). Free photos: unsplash.com or pexels.com.' },
+  { k:'order', label:'Sort order', type:'number', value:g.order ?? 0, hint:'Lower numbers show first.' }
+];
+const KINDS = {
+  menu:{ label:'menu item', fields:menuFields, clean:r => Object.assign(r, { weekday:undefined }) },
+  events:{ label:'event', fields:eventFields, clean:r => { if (r.mode === 'once') delete r.weekday; else { r.weekday = Number(r.weekday); delete r.date; } return r; } },
+  gallery:{ label:'photo', fields:galleryFields, clean:r => r }
+};
+function stripUndef(o){ Object.keys(o).forEach(k => o[k] === undefined && delete o[k]); return o; }
+async function addItem(kind){
+  const K = KINDS[kind]; const r = await ask('Add ' + K.label, K.fields(), { ok:'Add' }); if (!r) return;
+  try { await addDoc(collection(db, kind), stripUndef(K.clean(r))); toast('Added'); } catch(e) { toast('Failed: ' + (e.code || e.message), true); }
+}
+async function editItem(kind, id){
+  const K = KINDS[kind]; const cur = D[kind].find(x => x.id === id); if (!cur) return;
+  const r = await ask('Edit ' + K.label, K.fields(cur)); if (!r) return;
+  try { await setDoc(doc(db, kind, id), stripUndef(K.clean(r))); toast('Saved'); } catch(e) { toast('Failed: ' + (e.code || e.message), true); }
+}
+async function deleteItem(kind, id){
+  const cur = D[kind].find(x => x.id === id); if (!cur) return;
+  const ok = await confirmBox('Delete ' + KINDS[kind].label, `Remove "${cur.name || cur.game || cur.title}" from the site?`, 'Delete'); if (!ok) return;
+  try { await deleteDoc(doc(db, kind, id)); toast('Deleted'); } catch(e) { toast('Failed: ' + (e.code || e.message), true); }
+}
+async function importDefaults(kind){
+  const ok = await confirmBox('Import defaults', 'Copies the current built-in ' + kind + ' into your database so you can edit them here.', 'Import'); if (!ok) return;
+  try {
+    const b = writeBatch(db); const list = DEFAULTS[kind] || [];
+    list.forEach(item => b.set(doc(collection(db, kind)), item));
+    await b.commit(); toast('Imported ' + list.length + ' items');
+  } catch(e) { toast('Failed: ' + (e.code || e.message), true); }
+}
+
+/* ---------------- RENDER ---------------- */
+function render(){
+  const pending = D.bookings.filter(b => b.status === 'pending').length + 0;
+  const pr = D.redemptions.filter(r => r.status === 'pending').length;
+  $('#tabs').innerHTML = TABS.map(([k,l]) => `<button class="tab ${k===tab?'active':''}" data-tab="${k}">${l}${k==='bookings'&&pending?`<span class="n">${pending}</span>`:''}${k==='redemptions'&&pr?`<span class="n">${pr}</span>`:''}</button>`).join('');
+  $('#tabs').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; filterText = ''; render(); });
+  const v = $('#view');
+  ({ bookings:rBookings, redemptions:rRedemptions, customers:rCustomers, menu:rMenu, events:rEvents, gallery:rGallery })[tab](v);
+  v.querySelectorAll('[data-a]').forEach(el => el.onclick = () => act(el.dataset.a, el.dataset.id, el.dataset.k));
+  const s = v.querySelector('.search'); if (s) { s.oninput = () => { filterText = s.value; const pos = s.selectionStart; render(); const n = $('#view .search'); n.focus(); n.setSelectionRange(pos, pos); }; }
+}
+function act(a, id, kind){
+  const b = D.bookings.find(x => x.id === id), r = D.redemptions.find(x => x.id === id), u = D.customers ? null : null;
+  if (a === 'bk-confirm') setBookingStatus(b, 'confirmed');
+  else if (a === 'bk-complete') completeBooking(b);
+  else if (a === 'bk-cancel') confirmBox('Cancel booking', `${b.name} · ${b.date} ${b.time}`, 'Cancel booking').then(ok => ok && setBookingStatus(b, 'cancelled'));
+  else if (a === 'rd-approve') approveRedemption(r);
+  else if (a === 'rd-reject') rejectRedemption(r);
+  else if (a === 'us-adjust') adjustPoints(D.users.find(x => x.id === id));
+  else if (a === 'add') addItem(kind);
+  else if (a === 'edit') editItem(kind, id);
+  else if (a === 'del') deleteItem(kind, id);
+  else if (a === 'import') importDefaults(kind);
+}
+const waLink = p => 'https://wa.me/' + String(p || '').replace(/[^0-9]/g, '').replace(/^0/, '20');
+function rBookings(v){
+  const list = D.bookings.slice().sort((a,b) => ms(b.createdAt) - ms(a.createdAt));
+  const order = { pending:0, confirmed:1, completed:2, cancelled:3 };
+  list.sort((a,b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+  v.innerHTML = `<div class="bar"><div><h2>BOOKINGS</h2><div class="sub" style="margin:0">Logged-in customers' reservations. Completing one credits their loyalty points.</div></div></div>` +
+    (list.length ? `<div class="rows">` + list.map(b => `<div class="row r-book">
+      <div><div class="main">${esc(b.name)}</div><div class="meta">${esc(b.email)}<br><a href="${esc(waLink(b.phone))}" target="_blank" rel="noopener">${esc(b.phone)}</a></div></div>
+      <div><div class="main">${esc(b.date)} · ${esc(b.time)}</div><div class="meta">${esc(b.station)} · ${esc(b.duration)}${b.notes ? '<br>Note: ' + esc(b.notes) : ''}<br>Booked ${esc(fmtDT(b.createdAt))} · ${esc(b.points || 0)} pts${b.pointsAwarded != null ? ' (awarded ' + esc(b.pointsAwarded) + ')' : ''}</div></div>
+      <div><span class="pill ${esc(b.status)}">${esc(b.status)}</span></div>
+      <div class="acts">${b.status === 'pending' ? `<button class="btn sm" data-a="bk-confirm" data-id="${b.id}">Confirm</button>` : ''}${b.status === 'pending' || b.status === 'confirmed' ? `<button class="btn sm" data-a="bk-complete" data-id="${b.id}">Complete</button><button class="btn danger sm" data-a="bk-cancel" data-id="${b.id}">Cancel</button>` : ''}</div>
+    </div>`).join('') + `</div>` : `<div class="empty">No bookings yet. They appear here when a logged-in customer reserves from the site.</div>`);
+}
+function rRedemptions(v){
+  const list = D.redemptions.slice().sort((a,b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || ms(b.createdAt) - ms(a.createdAt));
+  v.innerHTML = `<div class="bar"><div><h2>REDEMPTIONS</h2><div class="sub" style="margin:0">Reward requests from customers. Approving deducts the points.</div></div></div>` +
+    (list.length ? `<div class="rows">` + list.map(x => `<div class="row r-red"><div><div class="main">${esc(x.reward)} · ${esc(x.cost)} pts</div><div class="meta">${esc(x.email || x.uid)} · ${esc(fmtDT(x.createdAt))} · <span class="pill ${esc(x.status)}">${esc(x.status)}</span></div></div>
+      <div class="acts">${x.status === 'pending' ? `<button class="btn sm" data-a="rd-approve" data-id="${x.id}">Approve</button><button class="btn danger sm" data-a="rd-reject" data-id="${x.id}">Reject</button>` : ''}</div></div>`).join('') + `</div>` : `<div class="empty">No redemption requests yet.</div>`);
+}
+function rCustomers(v){
+  const q = filterText.toLowerCase();
+  const list = D.users.filter(u => !q || (u.email || '').toLowerCase().includes(q) || (u.displayName || '').toLowerCase().includes(q)).sort((a,b) => (b.loyaltyPoints || 0) - (a.loyaltyPoints || 0));
+  v.innerHTML = `<div class="bar"><div><h2>CUSTOMERS</h2><div class="sub" style="margin:0">${D.users.length} accounts. Adjust points by hand if you need to.</div></div><input class="search" placeholder="Search name or email" value="${esc(filterText)}"></div>` +
+    (list.length ? `<div class="rows">` + list.map(u => `<div class="row r-user"><div><div class="main">${esc(u.displayName || 'Player')}</div><div class="meta">${esc(u.email || u.phone || u.id)} · ${esc(u.rank || rankFor(u.loyaltyPoints || 0))}</div></div>
+      <div class="acts"><span class="pill completed">${esc(u.loyaltyPoints || 0)} pts</span><button class="btn ghost sm" data-a="us-adjust" data-id="${u.id}">Adjust</button></div></div>`).join('') + `</div>` : `<div class="empty">No customers match.</div>`);
+}
+function emptyBlock(kind, label){
+  return `<div class="empty">Nothing saved yet, so the public site is showing its built-in ${label}.<br>Import them to start editing, or add your own.<br><button class="btn" data-a="import" data-k="${kind}">Import current ${label}</button></div>`;
+}
+function rMenu(v){
+  const cats = {}; D.menu.slice().sort((a,b) => (a.order||0)-(b.order||0) || String(a.name).localeCompare(String(b.name))).forEach(i => (cats[i.cat || 'Menu'] = cats[i.cat || 'Menu'] || []).push(i));
+  v.innerHTML = `<div class="bar"><div><h2>MENU</h2><div class="sub" style="margin:0">Changes show on the site straight away.</div></div><button class="btn" data-a="add" data-k="menu">+ Add item</button></div>` +
+    (D.menu.length ? Object.keys(cats).map(c => `<div class="cat">${esc(c.toUpperCase())}</div><div class="rows">` + cats[c].map(i => `<div class="row r-menu"><div><div class="main">${esc(i.name)} <span style="color:var(--cyan)">· EGP ${esc(i.price)}</span></div><div class="meta">${esc(i.desc)}</div></div><div class="acts"><button class="btn ghost sm" data-a="edit" data-k="menu" data-id="${i.id}">Edit</button><button class="btn danger sm" data-a="del" data-k="menu" data-id="${i.id}">Delete</button></div></div>`).join('') + `</div>`).join('') : emptyBlock('menu', 'menu'));
+}
+function nextDateLabel(e){
+  const m = /(\d+):(\d+)\s*(AM|PM)/i.exec(e.time || ''); let h = m ? (+m[1]) % 12 + (/PM/i.test(m[3]) ? 12 : 0) : 18, mi = m ? +m[2] : 0;
+  const now = new Date(); let d;
+  if (e.mode === 'once') { const p = (e.date || '').split('-').map(Number); d = new Date(p[0], p[1]-1, p[2], h, mi); return d < new Date(now - 3*3600e3) ? 'PAST (hidden on site)' : d.toDateString().slice(0,10); }
+  d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, mi); d.setDate(d.getDate() + (((+e.weekday) - d.getDay() + 7) % 7)); if (d < new Date(now - 3*3600e3)) d.setDate(d.getDate() + 7); return 'next: ' + d.toDateString().slice(0,10);
+}
+function rEvents(v){
+  v.innerHTML = `<div class="bar"><div><h2>EVENTS</h2><div class="sub" style="margin:0">Weekly events always show their next date. One-off events hide themselves after the day passes.</div></div><button class="btn" data-a="add" data-k="events">+ Add event</button></div>` +
+    (D.events.length ? `<div class="rows">` + D.events.map(e => `<div class="row r-ev"><div><div class="main">${esc(e.game)} · ${esc(e.type)} <span style="color:var(--orange)">· ${esc(e.prize)}</span></div><div class="meta">${e.mode === 'once' ? 'One date: ' + esc(e.date) : 'Every ' + esc(DAYS[e.weekday])} · ${esc(e.time)} · ${esc(e.slots)} · ${esc(nextDateLabel(e))}<br>${esc(e.desc)}</div></div><div class="acts"><button class="btn ghost sm" data-a="edit" data-k="events" data-id="${e.id}">Edit</button><button class="btn danger sm" data-a="del" data-k="events" data-id="${e.id}">Delete</button></div></div>`).join('') + `</div>` : emptyBlock('events', 'events'));
+}
+function rGallery(v){
+  const list = D.gallery.slice().sort((a,b) => (a.order||0)-(b.order||0));
+  v.innerHTML = `<div class="bar"><div><h2>GALLERY</h2><div class="sub" style="margin:0">Photos shown in "Inside Nexus Arena".</div></div><button class="btn" data-a="add" data-k="gallery">+ Add photo</button></div>` +
+    (list.length ? `<div class="gal">` + list.map(g => `<div class="g"><img src="${esc(g.url)}" alt="" referrerpolicy="no-referrer"><div class="gi"><div class="gt">${esc(g.title)}</div><div class="acts" style="display:flex;gap:8px"><button class="btn ghost sm" data-a="edit" data-k="gallery" data-id="${g.id}">Edit</button><button class="btn danger sm" data-a="del" data-k="gallery" data-id="${g.id}">Delete</button></div></div></div>`).join('') + `</div>` : emptyBlock('gallery', 'photos'));
+}
+</script>
+</body>
+</html>
