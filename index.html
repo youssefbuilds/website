@@ -407,6 +407,30 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
 .btn-redeem[disabled] { opacity:.4; cursor:not-allowed; }
 .station-cell.free { cursor:pointer; }
 .form-input.invalid { border-color:var(--orange) !important; }
+
+/* ===== v3 additions ===== */
+.field-hint { font-family:'Share Tech Mono',monospace; font-size:0.62rem; color:var(--gray); margin-top:6px; letter-spacing:1px; }
+.slot-note { font-family:'Share Tech Mono',monospace; font-size:0.62rem; color:var(--orange); margin-top:6px; letter-spacing:1px; display:none; }
+.gallery-grid { grid-auto-rows:200px; }
+.gallery-item:nth-child(n+6) { grid-column:span 4; }
+.gallery-item img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .6s ease; filter:saturate(1.05) brightness(.82); }
+.gallery-item:hover img { transform:scale(1.06); filter:saturate(1.15) brightness(.95); }
+.gallery-item::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 45%,rgba(5,8,16,.85)); pointer-events:none; }
+.gallery-caption { position:absolute; left:16px; right:16px; bottom:14px; z-index:2; font-family:'Orbitron',monospace; font-size:.68rem; letter-spacing:2px; color:#fff; text-transform:uppercase; text-shadow:0 2px 10px rgba(0,0,0,.8); }
+.gallery-item.noimg { background:linear-gradient(135deg,rgba(0,245,255,.08),rgba(180,120,255,.06)); }
+.gallery-credit { margin-top:16px; text-align:center; font-family:'Share Tech Mono',monospace; font-size:.62rem; color:var(--gray); letter-spacing:1px; }
+.gallery-credit a { color:var(--cyan); text-decoration:none; }
+.earn-note { font-family:'Share Tech Mono',monospace; font-size:.74rem; color:var(--cyan); border:1px dashed var(--border-hot); padding:12px 18px; margin:22px 0 0; border-radius:14px; line-height:1.7; }
+.loyalty-activity { margin-top:18px; border-top:1px solid var(--border); padding-top:14px; display:none; }
+.loyalty-activity h4 { font-family:'Orbitron',monospace; font-size:.62rem; letter-spacing:2px; color:var(--gray); margin-bottom:10px; font-weight:600; }
+.act-row { display:flex; justify-content:space-between; gap:10px; font-family:'Share Tech Mono',monospace; font-size:.68rem; padding:6px 0; color:var(--white); border-bottom:1px solid var(--border); }
+.act-row:last-child { border-bottom:none; }
+.act-status { padding:2px 10px; border-radius:999px; font-size:.6rem; letter-spacing:1px; white-space:nowrap; background:var(--orange-dim); color:var(--orange); align-self:center; }
+.act-status.completed, .act-status.approved { background:var(--cyan-dim); color:var(--cyan); }
+.act-status.cancelled, .act-status.rejected { background:rgba(255,255,255,.07); color:var(--gray); }
+.sim-badge { margin-left:10px; padding:2px 10px; border:1px solid var(--border); border-radius:999px; color:var(--gray); font-size:.6rem; letter-spacing:1px; }
+.btn-wa { display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:10px 20px; border:1px solid var(--cyan); color:var(--cyan); font-family:'Orbitron',monospace; font-size:.62rem; letter-spacing:2px; text-decoration:none; transition:all .25s; }
+.btn-wa:hover { background:var(--cyan-dim); transform:translateY(-1px); }
 </style>
 </head>
 <body>
@@ -429,7 +453,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
         </div>
         <div class="form-group">
           <label class="form-label">Phone</label>
-          <input type="text" class="form-input" id="modal-phone" placeholder="+20 1XX XXX XXXX">
+          <input type="tel" inputmode="tel" class="form-input" id="modal-phone" placeholder="01XXXXXXXXX or +201XXXXXXXXX">
         </div>
       </div>
       <div class="form-row">
@@ -500,6 +524,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
         <a href="#booking" onclick="closeUserDropdown()">🎮 &nbsp;Book a Station</a>
         <a href="#loyalty" onclick="closeUserDropdown()">⭐ &nbsp;My Loyalty Points</a>
         <a href="#loyalty" onclick="closeUserDropdown()">👤 &nbsp;My Profile</a>
+        <a href="admin.html" id="nav-admin" style="display:none">🛠 &nbsp;Admin Panel</a>
         <button class="logout-btn" onclick="logoutUser()">⏻ &nbsp;Logout</button>
       </div>
     </div>
@@ -539,7 +564,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       <div class="section-label">// Live Floor Map</div>
       <h2 class="section-title">Station Availability</h2>
     </div>
-    <div class="avail-live">LIVE FEED — Updates every 60s</div>
+    <div class="avail-live">FLOOR VIEW<span class="sim-badge">SIMULATED · REFRESHES EVERY 10 MIN</span></div>
   </div>
   <div class="avail-grid" id="station-grid"></div>
   <div class="avail-legend">
@@ -575,7 +600,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
 <!-- ============================================================ EVENTS -->
 <section id="events" class="s-events">
   <div class="section-label">// Tournaments</div>
-  <h2 class="section-title">Active Events</h2>
+  <h2 class="section-title">Upcoming Events</h2>
   <p class="section-sub">Weekly tournaments, cash prizes, and ranked ladder events. Register and prove your rank.</p>
   <div class="events-grid" id="events-container"></div>
 </section>
@@ -625,29 +650,8 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
   <div class="section-label">// The Arena</div>
   <h2 class="section-title">Inside Nexus Arena</h2>
   <p class="section-sub">A space designed for peak performance and immersive atmosphere.</p>
-  <div class="gallery-grid">
-    <div class="gallery-item reveal">
-      <div class="gallery-placeholder"><span class="icon">🖥️</span><span class="label">MAIN FLOOR — 42 STATIONS</span></div>
-      <div class="gallery-overlay"></div>
-    </div>
-    <div class="gallery-item reveal">
-      <div class="gallery-placeholder"><span class="icon">🏆</span><span class="label">TOURNAMENT ZONE</span></div>
-      <div class="gallery-overlay"></div>
-    </div>
-    <div class="gallery-item reveal">
-      <div class="gallery-placeholder"><span class="icon">👑</span><span class="label">VIP LOUNGE</span></div>
-      <div class="gallery-overlay"></div>
-    </div>
-    <div class="gallery-item reveal">
-      <div class="gallery-placeholder"><span class="icon">🍔</span><span class="label">THE FUEL BAR</span></div>
-      <div class="gallery-overlay"></div>
-    </div>
-    <div class="gallery-item reveal">
-      <div class="gallery-placeholder"><span class="icon">🎮</span><span class="label">PERIPHERALS WALL</span></div>
-      <div class="gallery-overlay"></div>
-    </div>
-  </div>
-  <div class="gallery-upload-note">📸 Replace placeholders — add your real photos in the <span>CAFE_DATA.gallery</span> array in the script section.</div>
+  <div class="gallery-grid" id="gallery-grid"></div>
+  <div class="gallery-credit">Photos from <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a></div>
 </section>
 
 <div class="divider"></div>
@@ -657,6 +661,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
   <div class="section-label">// Rewards</div>
   <h2 class="section-title">Loyalty Program</h2>
   <p class="section-sub">Earn XP points every session. Unlock perks, free hours, and exclusive rewards.</p>
+  <div class="earn-note">HOW IT WORKS: log in, book a station, play. You earn 10 pts for every hour booked, added automatically once staff marks your session completed. Redeem rewards below and staff approve them, so points always match your account.</div>
   <div class="loyalty-wrap">
     <div class="loyalty-card">
       <div class="loyalty-rank" id="loyalty-rank">RANK: BRONZE</div>
@@ -673,6 +678,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       <div id="loyalty-hint" style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--gray);margin-top:16px;">
         <a href="login.html" style="color:var(--cyan);">Log in</a> to see your points and redeem rewards.
       </div>
+      <div class="loyalty-activity" id="loyalty-activity"></div>
     </div>
     <div>
       <div class="loyalty-tiers" id="loyalty-tiers"></div>
@@ -701,7 +707,8 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number</label>
-        <input type="tel" class="form-input" id="booking-phone" placeholder="+20 1XX XXX XXXX">
+        <input type="tel" inputmode="tel" autocomplete="tel" class="form-input" id="booking-phone" placeholder="01XXXXXXXXX or +201XXXXXXXXX">
+        <div class="field-hint">Egyptian mobile only: 01XXXXXXXXX or +201XXXXXXXXX</div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -714,6 +721,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
             <option>10:00 AM</option><option>12:00 PM</option><option>2:00 PM</option>
             <option>4:00 PM</option><option>6:00 PM</option><option>8:00 PM</option><option>10:00 PM</option>
           </select>
+          <div class="slot-note" id="booking-slot-note"></div>
         </div>
       </div>
       <div class="form-row">
@@ -741,9 +749,9 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       <button class="btn-submit" onclick="submitBooking()">CONFIRM RESERVATION →</button>
     </div>
     <div class="booking-info">
-      <div class="info-item"><div class="info-icon">📍</div><div><div class="info-title">Location</div><div class="info-text">123 Gaming Street, Maadi<br>Cairo, Egypt<br><br>Ground floor · Free parking</div></div></div>
-      <div class="info-item"><div class="info-icon">🕐</div><div><div class="info-title">Opening Hours</div><div class="info-text">Open 24/7 — always on<br>Overnight sessions available Fri–Sat</div></div></div>
-      <div class="info-item"><div class="info-icon">📞</div><div><div class="info-title">Contact</div><div class="info-text">WhatsApp: +20 100 000 0000<br>Instagram: @nexusarenacairo</div></div></div>
+      <div class="info-item"><div class="info-icon">📍</div><div><div class="info-title">Location</div><div class="info-text">Cairo, Egypt<br>Exact spot is sent on WhatsApp when your booking is confirmed</div></div></div>
+      <div class="info-item"><div class="info-icon">🕐</div><div><div class="info-title">Opening Hours</div><div class="info-text">Open 24/7, every day<br>Book any slot from 10 AM to 10 PM, or pick All Night (8 hrs)</div></div></div>
+      <div class="info-item"><div class="info-icon">📞</div><div><div class="info-title">Contact</div><div class="info-text">Bookings and questions go through WhatsApp.<br><a class="btn-wa" href="#" onclick="openWhatsApp('Hi Nexus Arena, I have a question.');return false;">💬 CHAT ON WHATSAPP</a></div></div></div>
       <div class="info-item"><div class="info-icon">💳</div><div><div class="info-title">Payment</div><div class="info-text">Cash · Visa/Mastercard<br>Vodafone Cash · Instapay</div></div></div>
     </div>
   </div>
@@ -757,9 +765,9 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
       <p>Cairo's premier PC gaming cafe — engineered for performance, built for community.</p>
     </div>
     <div><div class="footer-col-title">Navigate</div><ul class="footer-links"><li><a href="#availability">Stations</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#events">Events</a></li><li><a href="#games">Games</a></li><li><a href="#menu">Menu</a></li><li><a href="#loyalty">Loyalty</a></li></ul></div>
-    <div><div class="footer-col-title">Social</div><ul class="footer-links"><li><a href="#">Instagram</a></li><li><a href="#">TikTok</a></li><li><a href="#">Discord</a></li><li><a href="#">YouTube</a></li></ul></div>
+    <div><div class="footer-col-title">Play</div><ul class="footer-links"><li><a href="#booking">Book a Station</a></li><li><a href="login.html">Login / Sign up</a></li><li><a href="#" onclick="openWhatsApp('Hi Nexus Arena, I have a question.');return false;">WhatsApp</a></li><li><a href="admin.html">Staff</a></li></ul></div>
   </div>
-  <div class="footer-bottom"><div>© 2025 <span>NEXUS ARENA</span> — All rights reserved</div><div>Built by <span>haven't decided</span></div></div>
+  <div class="footer-bottom"><div>© <span id="yr">2026</span> <span>NEXUS ARENA</span> — All rights reserved</div><div>Built by <span>Youssefbuilds</span></div></div>
 </footer>
 
 <!-- ============================================================
@@ -783,10 +791,20 @@ const CAFE_DATA = {
     { name:'Monthly Pass', price:'799', unit:'per month', features:[{t:'40 hours of gaming',y:true},{t:'Any available station',y:true},{t:'10% off all menu items',y:true},{t:'VIP lounge access',y:true},{t:'Tournament discounts',y:true}], featured:false }
   ],
 
+  // Events repeat weekly (weekday 0=Sun..6=Sat) so dates always stay in the future.
+  // An event can also be a one-off: { mode:'once', date:'YYYY-MM-DD' } (hidden once the day has passed).
   events: [
-    { game:'VALORANT', type:'5v5 Tournament', prize:'EGP 2,000', date:'Every Friday', time:'7:00 PM', slots:'16 Teams', desc:'Double-elimination bracket. All ranks welcome — seeded fairly.', tag:'REGISTRATION OPEN' },
-    { game:'FC 25', type:'1v1 Season League', prize:'EGP 1,200', date:'Saturdays', time:'4:00 PM', slots:'32 Players', desc:'Monthly season with weekly match days. Full standings & stats.', tag:'8 SPOTS LEFT' },
-    { game:'CS2', type:'Open Bracket', prize:'EGP 3,500', date:'Mar 22', time:'6:00 PM', slots:'Open', desc:'Counter-Strike 2 open tournament. 360Hz stations pre-warmed.', tag:'NEXT EVENT: MAR 22' }
+    { game:'VALORANT', type:'5v5 Tournament', prize:'EGP 2,000', mode:'weekly', weekday:5, time:'7:00 PM', slots:'16 Teams', desc:'Double-elimination bracket. All ranks welcome, seeded fairly.' },
+    { game:'FC 25', type:'1v1 Season League', prize:'EGP 1,200', mode:'weekly', weekday:6, time:'4:00 PM', slots:'32 Players', desc:'Monthly season with weekly match days. Full standings and stats.' },
+    { game:'CS2', type:'Open Bracket', prize:'EGP 3,500', mode:'weekly', weekday:4, time:'6:00 PM', slots:'Open', desc:'Counter-Strike 2 open tournament. 360Hz stations pre-warmed.' }
+  ],
+
+  gallery: [
+    { title:'Main Floor, 42 Stations', url:'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1000&q=70' },
+    { title:'Tournament Zone', url:'https://images.unsplash.com/photo-1661347561879-c9ab77bac89f?auto=format&fit=crop&w=900&q=70' },
+    { title:'VIP Lounge', url:'https://images.unsplash.com/photo-1636489953081-c4ebbd50fa3a?auto=format&fit=crop&w=900&q=70' },
+    { title:'The Fuel Bar', url:'https://images.unsplash.com/photo-1560689189-65b6ed6228e7?auto=format&fit=crop&w=900&q=70' },
+    { title:'Peripherals Wall', url:'https://images.unsplash.com/photo-1696710257827-75e2e5954059?auto=format&fit=crop&w=900&q=70' }
   ],
 
   games: [
@@ -818,8 +836,8 @@ const CAFE_DATA = {
 
   menu: {
     Drinks:[
-      { name:'ahhhhhh Fuel ⚡', desc:'House energy drink — mint & taurine', price:'80' },
-      { name:'Seif-FUEL', desc:'Imported G-FUEL cans', price:'65' },
+      { name:'Nexus Fuel ⚡', desc:'House energy drink, mint and taurine', price:'80' },
+      { name:'G-FUEL Can', desc:'Imported G-FUEL, assorted flavors', price:'65' },
       { name:'Pixel Lemonade', desc:'Fresh lemon, blue butterfly pea syrup', price:'40' },
       { name:'Cold Brew', desc:'Double-shot over ice', price:'55' },
       { name:'Monster / Red Bull', desc:'Imported, multiple flavors', price:'70' },
@@ -897,10 +915,41 @@ function renderPricing() {
   `).join('');
 }
 
-// EVENTS
+// EVENTS (dates are computed so they always show the next upcoming date)
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function timeToHM(t){ const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||''); if(!m) return [18,0]; let h=(+m[1])%12; if(/PM/i.test(m[3])) h+=12; return [h,+m[2]]; }
+function nextOccurrence(e){
+  const now = new Date(); const hm = timeToHM(e.time);
+  if(e.mode === 'once' && e.date){
+    const p = e.date.split('-').map(Number); const d = new Date(p[0], p[1]-1, p[2], hm[0], hm[1]);
+    return d.getTime() >= now.getTime() - 3*3600*1000 ? d : null;
+  }
+  const wd = Number(e.weekday); if(isNaN(wd)) return null;
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hm[0], hm[1]);
+  let add = (wd - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + add);
+  if(d.getTime() < now.getTime() - 3*3600*1000) d.setDate(d.getDate() + 7);
+  return d;
+}
+function eventView(e){
+  const d = nextOccurrence(e); if(!d) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const mid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((mid - today)/86400000);
+  const tag = diff === 0 ? 'TODAY' : diff === 1 ? 'TOMORROW' : 'IN ' + diff + ' DAYS';
+  return Object.assign({}, e, { when:d, dateLabel: DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate(), tagLabel: tag });
+}
+function upcomingEvents(){
+  return CAFE_DATA.events.map(eventView).filter(Boolean).sort((a,b)=>a.when-b.when);
+}
 function renderEvents() {
-  document.getElementById('events-container').innerHTML = CAFE_DATA.events.map((e,ei) => `
-    <div class="event-card reveal">
+  const list = upcomingEvents();
+  window.__events = list;
+  const el = document.getElementById('events-container');
+  if(!list.length){ el.innerHTML = '<div class="event-desc">No events scheduled right now. Check back soon.</div>'; return; }
+  el.innerHTML = list.map((e,ei) => `
+    <div class="event-card reveal visible">
       <div class="event-header">
         <div>
           <div class="event-game">${e.game}</div>
@@ -910,12 +959,12 @@ function renderEvents() {
       </div>
       <div class="event-body">
         <div class="event-meta">
-          <span>📅 <strong>${e.date}</strong></span>
+          <span>📅 <strong>${e.dateLabel}</strong></span>
           <span>🕗 <strong>${e.time}</strong></span>
           <span>👥 <strong>${e.slots}</strong></span>
         </div>
         <div class="event-desc">${e.desc}</div>
-        <div class="event-tag">${e.tag}</div>
+        <div class="event-tag">${e.tagLabel}</div>
         <button class="btn-register" onclick="registerEvent(${ei})">▸ REGISTER</button>
       </div>
     </div>
@@ -969,7 +1018,54 @@ function openWhatsApp(text){
   const w = window.open(url, '_blank', 'noopener');
   if(!w) window.location.href = url;
 }
-function validPhone(v){ return /^[+]?[0-9\s\-()]{7,18}$/.test(v.trim()); }
+function normPhone(v){ return (v||'').replace(/[\s\-().]/g,''); }
+// Egyptian mobile only: 01XXXXXXXXX or +201XXXXXXXXX (010/011/012/015)
+function validPhone(v){ return /^(\+20|0)1[0125][0-9]{8}$/.test(normPhone(v)); }
+const PHONE_MSG = 'Enter an Egyptian mobile as 01XXXXXXXXX or +201XXXXXXXXX.';
+
+// ----- time slots: past slots are blocked automatically and unblock on later dates -----
+function localISO(d){ const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().split('T')[0]; }
+function slotHour(t){ const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t); let h=(+m[1])%12; if(/PM/i.test(m[3])) h+=12; return h + (+m[2])/60; }
+function syncSlots(dateId, selId, noteId){
+  const dEl = document.getElementById(dateId), sEl = document.getElementById(selId);
+  if(!dEl || !sEl) return;
+  const now = new Date();
+  if(dEl.value && dEl.value < localISO(now)) dEl.value = localISO(now);
+  const isToday = dEl.value === localISO(now);
+  const nowH = now.getHours() + now.getMinutes()/60;
+  let first = -1;
+  Array.from(sEl.options).forEach((o,i) => {
+    if(!o.dataset.t){ o.dataset.t = o.textContent; o.value = o.textContent; }
+    const past = isToday && slotHour(o.dataset.t) <= nowH;
+    o.disabled = past;
+    o.textContent = past ? o.dataset.t + ' (passed)' : o.dataset.t;
+    if(!past && first < 0) first = i;
+  });
+  const note = noteId && document.getElementById(noteId);
+  if(first < 0){
+    // every slot today is gone: move to tomorrow automatically
+    const t = new Date(now); t.setDate(t.getDate()+1); dEl.value = localISO(t);
+    if(note){ note.style.display='block'; note.textContent='Today\'s slots are over, moved to tomorrow.'; }
+    return syncSlots(dateId, selId, noteId);
+  }
+  if(sEl.selectedIndex < 0 || sEl.options[sEl.selectedIndex].disabled) sEl.selectedIndex = first;
+  if(note && isToday === false && note.textContent.indexOf('moved') < 0) note.style.display='none';
+}
+function slotValid(dateId, selId){
+  const d = document.getElementById(dateId), s = document.getElementById(selId);
+  if(!d.value) return false;
+  if(d.value > localISO(new Date())) return true;
+  return d.value === localISO(new Date()) && !s.options[s.selectedIndex].disabled && slotHour(s.options[s.selectedIndex].dataset.t || s.value) > (new Date().getHours() + new Date().getMinutes()/60);
+}
+function hoursOf(txt){ const m=/(\d+)/.exec(txt||''); return m ? +m[1] : 1; }
+function pointsFor(durationTxt){ return hoursOf(durationTxt) * 10; }
+function saveBookingRecord(b){
+  if(NX.user && window.NXDB){
+    window.NXDB.saveBooking(b).then(()=>showToast('Booking saved to your account. Points arrive once staff mark it completed.')).catch(()=>{});
+    return true;
+  }
+  return false;
+}
 function mark(el, ok){ el.classList.toggle('invalid', !ok); return ok; }
 
 function submitBooking() {
@@ -980,9 +1076,9 @@ function submitBooking() {
   const okAll = [
     mark(fname, !!fname.value.trim()),
     mark(phone, validPhone(phone.value)),
-    mark(date, !!date.value && date.value >= date.min)
+    mark(date, !!date.value && date.value >= date.min && slotValid('booking-date','booking-time'))
   ].every(Boolean);
-  if(!okAll){ showToast('Please add your name, a valid phone number and a date from today on.'); return; }
+  if(!okAll){ showToast(!validPhone(phone.value) ? PHONE_MSG : !slotValid('booking-date','booking-time') ? 'That time has already passed. Pick a later slot or date.' : 'Please add your name and a valid date.'); return; }
   const notes = document.getElementById('booking-notes').value.trim();
   const msg = 'New Reservation:\n' +
     'Name: ' + (fname.value.trim() + ' ' + lname.value.trim()).trim() + '\n' +
@@ -992,7 +1088,8 @@ function submitBooking() {
     'Station: ' + document.getElementById('booking-station').value + '\n' +
     'Duration: ' + document.getElementById('booking-duration').value +
     (notes ? '\nNotes: ' + notes : '');
-  showToast('Opening WhatsApp to send your reservation…');
+  const saved = saveBookingRecord({ name:(fname.value.trim()+' '+lname.value.trim()).trim(), phone:normPhone(phone.value), date:date.value, time:document.getElementById('booking-time').value, station:document.getElementById('booking-station').value, duration:document.getElementById('booking-duration').value, notes:notes, points:pointsFor(document.getElementById('booking-duration').value) });
+  showToast(saved ? 'Opening WhatsApp to send your reservation…' : 'Opening WhatsApp. Log in before booking to earn loyalty points.');
   openWhatsApp(msg);
 }
 
@@ -1002,9 +1099,9 @@ function preselectStation(i){
 }
 
 function registerEvent(i){
-  const e = CAFE_DATA.events[i];
+  const e = (window.__events || [])[i]; if(!e) return;
   const u = NX.user;
-  openWhatsApp('Event registration: ' + e.game + ' - ' + e.type + ' (' + e.date + ', ' + e.time + ')' + (u ? '\nName: ' + (u.displayName || u.email) : ''));
+  openWhatsApp('Event registration: ' + e.game + ' - ' + e.type + ' (' + e.dateLabel + ', ' + e.time + ')' + (u ? '\nName: ' + (u.displayName || u.email) : ''));
   showToast('Opening WhatsApp to register for ' + e.game + '…');
 }
 
@@ -1015,16 +1112,17 @@ function reserveStation(n, vip){
 // MENU
 function renderMenu(category='Drinks') {
   const tabsEl = document.getElementById('menu-tabs-container');
-  if(!tabsEl.innerHTML) {
-    tabsEl.innerHTML = Object.keys(CAFE_DATA.menu).map(cat=>`
-      <button class="tab-btn ${cat==='Drinks'?'active':''}" onclick="switchTab('${cat}',this)">${cat}</button>
-    `).join('');
-  }
-  const items = CAFE_DATA.menu[category];
+  const cats = Object.keys(CAFE_DATA.menu);
+  if(!cats.includes(category)) category = cats[0];
+  window.__menuCat = category;
+  tabsEl.innerHTML = cats.map(cat=>`
+    <button class="tab-btn ${cat===category?'active':''}" onclick="switchTab('${cat.replace(/'/g,"\\'")}',this)">${cat}</button>
+  `).join('');
+  const items = CAFE_DATA.menu[category] || [];
   document.getElementById('menu-items-container').innerHTML = `
     <div class="menu-grid">
       ${items.map(i=>`
-        <div class="menu-item reveal">
+        <div class="menu-item reveal visible">
           <div>
             <div class="menu-item-name">${i.name}</div>
             <div class="menu-item-desc">${i.desc}</div>
@@ -1037,8 +1135,6 @@ function renderMenu(category='Drinks') {
   initReveal();
 }
 function switchTab(cat, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
   renderMenu(cat);
 }
 
@@ -1066,9 +1162,42 @@ function renderLoyalty() {
   `).join('');
 }
 
+// GALLERY
+function renderGallery(){
+  const el = document.getElementById('gallery-grid'); if(!el) return;
+  el.innerHTML = (CAFE_DATA.gallery || []).map(g => `
+    <div class="gallery-item reveal visible">
+      <img src="${g.url}" alt="${(g.title||'').replace(/"/g,'')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('noimg');this.remove()">
+      <div class="gallery-caption">${g.title||''}</div>
+      <div class="gallery-overlay"></div>
+    </div>`).join('');
+}
+
+// ADMIN-EDITABLE CONTENT (menu, events, gallery live in Firestore; built-in defaults are used until the owner saves some)
+window.NX_setContent = function(kind, arr){
+  if(!arr || !arr.length) return;
+  if(kind === 'menu'){
+    const by = {};
+    arr.sort((a,b)=>(a.order||0)-(b.order||0) || String(a.name).localeCompare(String(b.name)));
+    arr.forEach(i => { const c = i.cat || 'Menu'; (by[c] = by[c] || []).push({ name:i.name, desc:i.desc||'', price:String(i.price) }); });
+    CAFE_DATA.menu = by; renderMenu(window.__menuCat);
+  } else if(kind === 'events'){
+    CAFE_DATA.events = arr; renderEvents();
+  } else if(kind === 'gallery'){
+    arr.sort((a,b)=>(a.order||0)-(b.order||0));
+    CAFE_DATA.gallery = arr; renderGallery();
+  }
+};
+
 // STATION AVAILABILITY (LIVE MAP SIMULATION)
+// Same picture for every visitor: seeded by station number and a 10-minute time bucket, busier in the evening.
+function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function stationBusy(i, bucket, p){ return mulberry(bucket * 977 + i * 131)() < p; }
 function renderStations() {
   const grid = document.getElementById('station-grid');
+  const bucket = Math.floor(Date.now() / 600000);
+  const hr = new Date().getHours();
+  const pBusy = hr >= 17 || hr < 1 ? 0.78 : hr >= 12 ? 0.55 : hr >= 8 ? 0.35 : 0.22;
   let html = '';
   let freeCount = 0;
   let occCount = 0;
@@ -1076,7 +1205,7 @@ function renderStations() {
 
   for(let i=1; i<=42; i++) {
     const isVip = (i >= 37); // Last 6 stations are VIP
-    const isOccupied = Math.random() > 0.45; // Randomize availability for demo
+    const isOccupied = stationBusy(i, bucket, pBusy);
 
     if(!isOccupied && !isVip) freeCount++;
     if(!isOccupied && isVip) vipFreeCount++;
@@ -1169,22 +1298,23 @@ function confirmReserve() {
   const name = document.getElementById('modal-name');
   const phone = document.getElementById('modal-phone');
   const date = document.getElementById('modal-date');
-  const ok = [mark(name, !!name.value.trim()), mark(phone, validPhone(phone.value)), mark(date, !!date.value && date.value >= date.min)].every(Boolean);
+  const ok = [mark(name, !!name.value.trim()), mark(phone, validPhone(phone.value)), mark(date, !!date.value && date.value >= date.min && slotValid('modal-date','modal-time'))].every(Boolean);
   if (!ok) {
-    showToast('Please fill in your name, a valid phone number and a date from today on.');
+    showToast(!validPhone(phone.value) ? PHONE_MSG : !slotValid('modal-date','modal-time') ? 'That time has already passed. Pick a later slot or date.' : 'Please fill in your name and a valid date.');
     return;
   }
   const title = document.getElementById('modal-station-title').innerText;
   const info = document.getElementById('modal-station-info').innerText;
+  saveBookingRecord({ name:name.value.trim(), phone:normPhone(phone.value), date:date.value, time:document.getElementById('modal-time').value, station:title, duration:document.getElementById('modal-duration').value, notes:'', points:pointsFor(document.getElementById('modal-duration').value) });
   openWhatsApp('New Reservation:\nStation: ' + title + ' (' + info.trim() + ')\nName: ' + name.value.trim() + '\nPhone: ' + phone.value.trim() +
     '\nDate: ' + date.value + '\nTime: ' + document.getElementById('modal-time').value + '\nDuration: ' + document.getElementById('modal-duration').value);
   document.getElementById('modal-form-wrap').style.display = 'none';
   document.getElementById('modal-success').style.display = 'block';
-  document.getElementById('confirmed-phone').innerText = phone.value.trim();
+  document.getElementById('confirmed-phone').innerText = normPhone(phone.value);
 }
 
 // LOYALTY STATE (filled from Firebase when logged in)
-const NX = window.NX = { user:null, points:0, rank:'BRONZE' };
+const NX = window.NX = { user:null, points:0, pending:0, bookings:[], redemptions:[], rank:'BRONZE' };
 function tierFor(pts){
   const t = CAFE_DATA.loyalty.tiers; let cur = t[0];
   t.forEach(x => { if(pts >= x.min) cur = x; });
@@ -1206,21 +1336,40 @@ function updateLoyalty(){
   document.getElementById('loyalty-bar').style.width = pct + '%';
   document.getElementById('loyalty-hint').style.display = NX.user ? 'none' : 'block';
   renderLoyalty();
+  renderActivity();
   document.querySelectorAll('#rewards-grid .reward-card').forEach(c => c.classList.add('visible'));
   document.querySelectorAll('#loyalty-tiers .tier-row').forEach(c => c.classList.add('visible'));
 }
 function redeemReward(i){
   const r = CAFE_DATA.loyalty.rewards[i];
   if(!NX.user){ showToast('Log in to redeem rewards.'); setTimeout(()=>{ window.location.href='login.html'; }, 1200); return; }
-  if(NX.points < r.pts){ showToast('You need ' + (r.pts - NX.points) + ' more points for ' + r.name + '.'); return; }
-  openWhatsApp('Reward redemption: ' + r.name + ' (' + r.cost + ')\nName: ' + (NX.user.displayName || NX.user.email) + '\nEmail: ' + (NX.user.email || '') + '\nCurrent points: ' + NX.points);
-  showToast('Opening WhatsApp to claim ' + r.name + '…');
+  const avail = NX.points - (NX.pending || 0);
+  if(avail < r.pts){ showToast('You need ' + (r.pts - avail) + ' more points for ' + r.name + (NX.pending ? ' (some points are held by pending requests).' : '.')); return; }
+  if(!window.NXDB){ showToast('Still connecting, try again in a moment.'); return; }
+  window.NXDB.requestRedeem({ reward:r.name, cost:r.pts }).then(()=>{
+    showToast('Request sent. Staff will approve it and your points update automatically.');
+    openWhatsApp('Reward redemption request: ' + r.name + ' (' + r.cost + ')\nName: ' + (NX.user.displayName || NX.user.email) + '\nEmail: ' + (NX.user.email || '') + '\nCurrent points: ' + NX.points);
+  }).catch(()=>showToast('Could not send the request. Please try again.'));
 }
+function renderActivity(){
+  const el = document.getElementById('loyalty-activity'); if(!el) return;
+  if(!NX.user){ el.style.display='none'; return; }
+  const rows = [];
+  (NX.bookings||[]).forEach(b => rows.push({t:b.ts, txt:'Booking ' + b.date + ' ' + b.time, st:b.status + (b.status==='completed' && b.pointsAwarded ? ' +' + b.pointsAwarded : '')}));
+  (NX.redemptions||[]).forEach(r => rows.push({t:r.ts, txt:'Redeem: ' + r.reward + ' (' + r.cost + ' pts)', st:r.status}));
+  rows.sort((a,b)=>b.t-a.t);
+  el.style.display = rows.length ? 'block' : 'none';
+  el.innerHTML = '<h4>// MY ACTIVITY</h4>' + rows.slice(0,6).map(r => '<div class="act-row"><span>' + r.txt + '</span><span class="act-status ' + r.st.split(' ')[0] + '">' + r.st.toUpperCase() + '</span></div>').join('');
+}
+window.renderActivity = renderActivity;
 function setMinDates(){
   const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   const today = d.toISOString().split('T')[0];
-  ['booking-date','modal-date'].forEach(id => { const el = document.getElementById(id); if(el){ el.min = today; if(!el.value) el.value = today; } });
+  ['booking-date','modal-date'].forEach(id => { const el = document.getElementById(id); if(el){ el.min = today; if(!el.value || el.value < today) el.value = today; } });
+  syncSlots('booking-date','booking-time','booking-slot-note');
+  syncSlots('modal-date','modal-time');
 }
+['booking-date','modal-date'].forEach(function(id){ const el=document.getElementById(id); if(el) el.addEventListener('input', function(){ syncSlots('booking-date','booking-time','booking-slot-note'); syncSlots('modal-date','modal-time'); }); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
 document.getElementById('reserveModal').addEventListener('click', e => { if(e.target.id === 'reserveModal') closeModal(); });
 
@@ -1260,7 +1409,9 @@ window.onload = () => {
   renderEvents();
   renderGames();
   renderMenu();
+  renderGallery();
   renderStations();
+  const yr = document.getElementById('yr'); if(yr) yr.textContent = new Date().getFullYear();
   
   // Staggered animations
   setTimeout(initReveal, 100);
@@ -1269,8 +1420,8 @@ window.onload = () => {
   setMinDates();
   updateLoyalty();
   
-  // Auto-refresh station map every 60 seconds
-  setInterval(renderStations, 60000);
+  // Re-check every minute: station map only changes each 10-minute bucket, slots and event dates stay current
+  setInterval(function(){ renderStations(); renderEvents(); syncSlots('booking-date','booking-time','booking-slot-note'); syncSlots('modal-date','modal-time'); }, 60000);
 };
 
 // SCROLL LISTENER
@@ -1309,7 +1460,7 @@ document.addEventListener('click', (e) => {
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCRywltr8cfnolmKKv2EHXPYIjLvw3bHtM",
@@ -1319,14 +1470,40 @@ document.addEventListener('click', (e) => {
     messagingSenderId: "1074459989810",
     appId: "1:1074459989810:web:4b60c28fccda4595c0292b"
   };
+  const ADMIN_EMAIL = "youssef.ahmed4990@gmail.com";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Public, admin-editable content. Falls back to built-in defaults if empty or unreachable.
+  ['menu','events','gallery'].forEach(kind => {
+    try {
+      onSnapshot(collection(db, kind), snap => {
+        window.NX_setContent(kind, snap.docs.map(d => Object.assign({ id:d.id }, d.data())));
+      }, () => {});
+    } catch(e) {}
+  });
+
+  let unsubs = [];
+  function stopLive(){ unsubs.forEach(u => { try{u();}catch(e){} }); unsubs = []; }
+  const tsOf = v => (v && v.toMillis) ? v.toMillis() : 0;
+
+  window.NXDB = {
+    saveBooking: async (b) => {
+      const u = auth.currentUser; if(!u) throw new Error('not signed in');
+      return addDoc(collection(db, 'bookings'), Object.assign({}, b, { uid:u.uid, email:u.email || '', status:'pending', createdAt:serverTimestamp() }));
+    },
+    requestRedeem: async (r) => {
+      const u = auth.currentUser; if(!u) throw new Error('not signed in');
+      return addDoc(collection(db, 'redemptions'), { uid:u.uid, email:u.email || '', reward:r.reward, cost:r.cost, status:'pending', createdAt:serverTimestamp() });
+    }
+  };
+
   onAuthStateChanged(auth, async (user) => {
     const loginBtn = document.getElementById('nav-login-btn');
     const userNav  = document.getElementById('nav-user');
+    stopLive();
 
     if (user) {
       loginBtn.style.display = 'none';
@@ -1339,22 +1516,42 @@ document.addEventListener('click', (e) => {
       document.getElementById('nav-username').innerText  = displayName;
       document.getElementById('dropdown-name').innerText = displayName;
       document.getElementById('dropdown-email').innerText = user.email || user.phoneNumber || '';
+      const adm = document.getElementById('nav-admin');
+      if (adm) adm.style.display = (user.email === ADMIN_EMAIL && user.emailVerified) ? 'flex' : 'none';
 
       window.NX.user = { uid: user.uid, displayName, email: user.email || user.phoneNumber || '' };
+      const uref = doc(db, 'users', user.uid);
       try {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if (snap.exists()) {
-          const pts = Number(snap.data().loyaltyPoints) || 0;
+        const snap = await getDoc(uref);
+        if (!snap.exists()) {
+          await setDoc(uref, { uid:user.uid, displayName, email:user.email || '', phone:user.phoneNumber || '', loyaltyPoints:0, rank:'BRONZE', totalHours:0, createdAt:serverTimestamp() });
+        }
+      } catch(e) {}
+      // live points + activity
+      try {
+        unsubs.push(onSnapshot(uref, s => {
+          const pts = s.exists() ? (Number(s.data().loyaltyPoints) || 0) : 0;
           window.NX.points = pts;
           document.getElementById('dropdown-pts').innerText = pts.toLocaleString() + ' NEXUS PTS';
-        }
+          window.updateLoyalty && window.updateLoyalty();
+        }, () => {}));
+        unsubs.push(onSnapshot(query(collection(db, 'bookings'), where('uid','==',user.uid)), s => {
+          window.NX.bookings = s.docs.map(d => Object.assign({ id:d.id, ts:tsOf(d.data().createdAt) }, d.data()));
+          window.renderActivity && window.renderActivity();
+        }, () => {}));
+        unsubs.push(onSnapshot(query(collection(db, 'redemptions'), where('uid','==',user.uid)), s => {
+          const rows = s.docs.map(d => Object.assign({ id:d.id, ts:tsOf(d.data().createdAt) }, d.data()));
+          window.NX.redemptions = rows;
+          window.NX.pending = rows.filter(r => r.status === 'pending').reduce((a,r) => a + (Number(r.cost)||0), 0);
+          window.renderActivity && window.renderActivity();
+        }, () => {}));
       } catch(e) {}
       window.updateLoyalty && window.updateLoyalty();
 
     } else {
       loginBtn.style.display = 'flex';
       userNav.style.display  = 'none';
-      window.NX.user = null; window.NX.points = 0;
+      window.NX.user = null; window.NX.points = 0; window.NX.pending = 0; window.NX.bookings = []; window.NX.redemptions = [];
       window.updateLoyalty && window.updateLoyalty();
     }
   });
@@ -1367,8 +1564,26 @@ document.addEventListener('click', (e) => {
 </script>
 
 <style>
-/* Slightly softer corners for interactive buttons. */
-button, input[type="button"], input[type="submit"], a[class*="btn"], [class*="btn-"], .nav-cta { border-radius: 999px; }
+/* ===== BUTTON SYSTEM: one pill style everywhere ===== */
+button, input[type="button"], input[type="submit"], a[class*="btn"], [class*="btn-"], .nav-cta, .nav-login-btn, .tab-btn, .filter-btn, .modal-close, .modal-confirm, .btn-wa { border-radius:999px; }
+.btn-primary, .btn-ghost, .btn-submit, .modal-confirm, .btn-request, .btn-book, .btn-reserve-spec, .btn-redeem, .btn-register, .btn-wa, .nav-login-btn { text-align:center; white-space:nowrap; justify-content:center; overflow:hidden; }
+.btn-primary:hover, .btn-ghost:hover, .btn-submit:hover, .modal-confirm:hover, .btn-request:hover, .btn-book:hover, .btn-reserve-spec:hover, .btn-redeem:hover, .btn-register:hover { transform:translateY(-2px); }
+.btn-ghost:hover { background:rgba(255,255,255,0.06); }
+.menu-tabs { gap:10px; border-bottom:none; padding-bottom:6px; }
+.tab-btn { border:1px solid var(--border); margin-bottom:0; padding:11px 24px; }
+.tab-btn.active { border-color:var(--cyan); background:var(--cyan-dim); }
+.nav-dropdown button, .nav-dropdown a { border-radius:0; }
+.modal-close { padding:6px 14px; border:1px solid var(--border); font-size:.8rem; }
+.btn-reserve-spec { padding-left:26px; padding-right:26px; }
+.btn-book { border-radius:999px; }
+@media (max-width:600px) {
+  .hero-actions { flex-direction:column; align-items:stretch; gap:12px; }
+  .btn-primary, .btn-ghost { display:block; width:100%; padding:16px 20px; font-size:.7rem; letter-spacing:2px; }
+  .menu-tabs { flex-wrap:nowrap; }
+  .tab-btn { padding:10px 18px; letter-spacing:2px; }
+  .filter-btn { padding:8px 14px; }
+  .toast { left:16px; right:16px; bottom:16px; }
+}
 </style>
 </body>
 </html>
