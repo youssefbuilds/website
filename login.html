@@ -711,5 +711,12 @@ window.onload = () => {
   const today = new Date().toISOString().split('T')[0];
 };
 </script>
+<style>
+/* Pill buttons everywhere, same treatment as the main site */
+button, .btn-submit, .btn-google, .btn-send-otp, .auth-tab, .toggle-pw, a[class*="btn"] { border-radius:999px !important; }
+.btn-submit, .btn-google, .btn-send-otp { padding-left:24px; padding-right:24px; }
+.auth-tabs { border-radius:999px; overflow:hidden; }
+.btn-submit:hover:not(:disabled), .btn-google:hover, .btn-send-otp:hover { transform:translateY(-1px); }
+</style>
 </body>
 </html>
