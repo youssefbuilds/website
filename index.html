@@ -526,6 +526,7 @@ footer { padding:60px 5% 36px; border-top:1px solid var(--border); background:va
         <a href="#booking" onclick="closeUserDropdown()">🎮 &nbsp;Book a Station</a>
         <a href="#loyalty" onclick="closeUserDropdown()">⭐ &nbsp;My Loyalty Points</a>
         <a href="#loyalty" onclick="closeUserDropdown()">👤 &nbsp;My Profile</a>
+        <button type="button" onclick="openNameEditor()">✏️ &nbsp;Edit Name</button>
         <a href="admin.html" id="nav-admin" style="display:none">🛠 &nbsp;Admin Panel</a>
         <button class="logout-btn" onclick="logoutUser()">⏻ &nbsp;Logout</button>
       </div>
@@ -966,8 +967,8 @@ function renderEvents() {
           <span>👥 <strong>${e.slots}</strong></span>
         </div>
         <div class="event-desc">${e.desc}</div>
-        <div class="event-tag">${e.tagLabel}</div>
-        <button class="btn-register" onclick="registerEvent(${ei})">▸ REGISTER</button>
+        <div class="event-actions"><div class="event-tag">${e.tagLabel}</div>
+        <button class="btn-register" onclick="registerEvent(${ei})">▸ REGISTER</button></div>
       </div>
     </div>
   `).join('');
@@ -1316,6 +1317,43 @@ function confirmReserve() {
 }
 
 // LOYALTY STATE (filled from Firebase when logged in)
+const NAME_MAX = 20;
+function cleanName(n){
+  n = String(n == null ? '' : n).replace(/\s+/g,' ').trim();
+  if(n.indexOf('@') >= 0) return '';            // never show an email as a name
+  return Array.from(n).slice(0, NAME_MAX).join('').trim();
+}
+window.nxCleanName = cleanName;
+function openNameEditor(){
+  closeUserDropdown();
+  if(!window.NX || !NX.user){ return; }
+  const old = document.getElementById('name-ov'); if(old) old.remove();
+  const ov = document.createElement('div'); ov.id = 'name-ov'; ov.className = 'name-ov';
+  ov.innerHTML = '<div class="name-box" role="dialog" aria-label="Edit display name">' +
+    '<div class="name-title">DISPLAY NAME</div>' +
+    '<div class="name-sub">This is the name shown on the site. Up to ' + NAME_MAX + ' characters, no email addresses.</div>' +
+    '<input class="name-input" id="name-input" type="text" maxlength="' + NAME_MAX + '" autocomplete="nickname" placeholder="YourGamertag">' +
+    '<div class="name-count" id="name-count"></div><div class="name-err" id="name-err"></div>' +
+    '<div class="name-actions"><button class="btn-ghost" id="name-cancel" type="button">Cancel</button><button class="btn-primary" id="name-save" type="button">Save name</button></div></div>';
+  document.body.appendChild(ov);
+  const inp = ov.querySelector('#name-input'), cnt = ov.querySelector('#name-count'), err = ov.querySelector('#name-err'), save = ov.querySelector('#name-save');
+  inp.value = NX.user.displayName && NX.user.displayName !== 'Player' ? NX.user.displayName : '';
+  const upd = () => { cnt.textContent = Array.from(inp.value).length + ' / ' + NAME_MAX; };
+  upd(); inp.addEventListener('input', upd); inp.focus();
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if(e.target === ov) close(); });
+  ov.querySelector('#name-cancel').onclick = close;
+  const go = async () => {
+    const v = cleanName(inp.value);
+    if(v.length < 2){ err.textContent = inp.value.indexOf('@') >= 0 ? 'Use a gamertag, not an email address.' : 'Name needs at least 2 characters.'; return; }
+    if(!window.NXDB){ err.textContent = 'Still connecting, try again in a moment.'; return; }
+    save.disabled = true; err.textContent = '';
+    try { await window.NXDB.saveName(v); close(); showToast('Name updated.'); }
+    catch(e){ save.disabled = false; err.textContent = 'Could not save the name. Try again.'; }
+  };
+  save.onclick = go;
+  inp.addEventListener('keydown', e => { if(e.key === 'Enter') go(); if(e.key === 'Escape') close(); });
+}
 const NX = window.NX = { user:null, points:0, pending:0, bookings:[], redemptions:[], rank:'BRONZE' };
 function tierFor(pts){
   const t = CAFE_DATA.loyalty.tiers; let cur = t[0];
@@ -1328,7 +1366,7 @@ function updateLoyalty(){
   const idx = tiers.indexOf(cur), next = tiers[idx+1];
   NX.rank = cur.name;
   document.getElementById('loyalty-rank').innerText = 'RANK: ' + cur.name;
-  document.getElementById('loyalty-name').innerText = NX.user ? (NX.user.displayName || (NX.user.email||'').split('@')[0] || 'PLAYER').toUpperCase() : 'GUEST';
+  document.getElementById('loyalty-name').innerText = NX.user ? (cleanName(NX.user.displayName) || 'PLAYER').toUpperCase() : 'GUEST';
   document.getElementById('loyalty-pts-display').innerText = NX.points.toLocaleString();
   document.getElementById('loyalty-from').innerText = cur.name;
   document.getElementById('loyalty-togo').innerText = next ? (next.min - NX.points).toLocaleString() + ' pts to ' + next.name : 'MAX RANK';
@@ -1461,8 +1499,8 @@ document.addEventListener('click', (e) => {
 <!-- FIREBASE AUTH LISTENER -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCRywltr8cfnolmKKv2EHXPYIjLvw3bHtM",
@@ -1496,6 +1534,17 @@ document.addEventListener('click', (e) => {
       const u = auth.currentUser; if(!u) throw new Error('not signed in');
       return addDoc(collection(db, 'bookings'), Object.assign({}, b, { uid:u.uid, email:u.email || '', status:'pending', createdAt:serverTimestamp() }));
     },
+    saveName: async (raw) => {
+      const u = auth.currentUser; if(!u) throw new Error('not signed in');
+      const name = window.nxCleanName(raw); if(name.length < 2) throw new Error('bad name');
+      await updateProfile(u, { displayName: name });
+      try { await updateDoc(doc(db, 'users', u.uid), { displayName: name, updatedAt: serverTimestamp() }); } catch(e) { /* profile name is saved even if the points record is not reachable yet */ }
+      document.getElementById('nav-avatar').innerText = Array.from(name).slice(0,2).join('').toUpperCase();
+      document.getElementById('nav-username').innerText = name;
+      document.getElementById('dropdown-name').innerText = name;
+      window.NX.user.displayName = name;
+      window.updateLoyalty && window.updateLoyalty();
+    },
     requestRedeem: async (r) => {
       const u = auth.currentUser; if(!u) throw new Error('not signed in');
       return addDoc(collection(db, 'redemptions'), { uid:u.uid, email:u.email || '', rewardId:r.rewardId, reward:r.reward, cost:r.cost, status:'pending', createdAt:serverTimestamp() });
@@ -1511,8 +1560,8 @@ document.addEventListener('click', (e) => {
       loginBtn.style.display = 'none';
       userNav.style.display  = 'block';
 
-      const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Player');
-      const initials = displayName.slice(0,2).toUpperCase();
+      const displayName = window.nxCleanName(user.displayName) || 'Player';
+      const initials = Array.from(displayName).slice(0,2).join('').toUpperCase();
 
       document.getElementById('nav-avatar').innerText    = initials;
       document.getElementById('nav-username').innerText  = displayName;
@@ -1586,6 +1635,38 @@ button, input[type="button"], input[type="submit"], a[class*="btn"], [class*="bt
   .filter-btn { padding:8px 14px; }
   .toast { left:16px; right:16px; bottom:16px; }
 }
+
+/* ===== v3 polish: names, hardware grid, events, rewards, request form, menu tabs ===== */
+.specs-grid { grid-template-columns:repeat(3,1fr); }
+@media (max-width:900px) { .specs-grid { grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); } }
+.event-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.event-actions .event-tag { margin:0; }
+.rewards-grid { align-items:stretch; }
+.reward-card { display:flex; flex-direction:column; align-items:center; }
+.reward-card .btn-redeem { margin-top:auto; }
+.reward-desc { margin-bottom:16px; }
+.request-form { flex-wrap:wrap; }
+.request-input { min-width:0; flex:1 1 180px; }
+.btn-request { flex:0 0 auto; }
+.menu-tabs { scrollbar-width:none; }
+.menu-tabs::-webkit-scrollbar { display:none; }
+.nav-dropdown { max-width:260px; }
+.nav-dropdown-header { min-width:0; }
+#dropdown-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+.loyalty-name { overflow-wrap:anywhere; word-break:break-word; line-height:1.15; }
+.avail-summary { grid-template-columns:repeat(3,1fr); }
+.name-ov { position:fixed; inset:0; z-index:2000; background:rgba(2,6,14,.82); display:flex; align-items:center; justify-content:center; padding:20px; }
+.name-box { width:100%; max-width:380px; background:var(--modal-bg, #0a121e); border:1px solid var(--border-hot); padding:26px 24px; }
+.name-title { font-family:'Orbitron',monospace; font-weight:700; font-size:.85rem; letter-spacing:3px; color:var(--white); margin-bottom:8px; }
+.name-sub { font-size:.85rem; color:var(--gray); line-height:1.5; margin-bottom:16px; }
+.name-input { width:100%; box-sizing:border-box; background:rgba(0,0,0,.4); border:1px solid var(--border); color:var(--white); font-family:'Rajdhani',sans-serif; font-size:1rem; padding:12px 16px; outline:none; border-radius:999px; }
+.name-input:focus { border-color:var(--cyan); }
+.name-count { font-family:'Share Tech Mono',monospace; font-size:.65rem; color:var(--gray); text-align:right; margin:6px 6px 0; }
+.name-err { min-height:18px; font-size:.8rem; color:var(--orange); margin:6px 6px 0; }
+.name-actions { display:flex; gap:10px; margin-top:12px; justify-content:flex-end; }
+.name-actions button { padding:11px 22px; }
+@media (max-width:480px) { .nav-username { display:none; } .nav-user-btn { padding:7px 12px 7px 8px; gap:8px; } .avail-summary { gap:10px; } .avail-summary > * { padding-left:14px; padding-right:10px; } }
+@media (max-width:600px) { .menu-tabs { flex-wrap:wrap; overflow:visible; } .name-actions button { flex:1; } }
 </style>
 </body>
 </html>
