@@ -279,6 +279,8 @@ function ask(title, fields, opts = {}){
 const confirmBox = (title, text, ok) => ask(title, [], { hint:text, ok:ok || 'Confirm' });
 
 /* ---------------- ACTIONS ---------------- */
+const REWARD_COST = { drink:100, hour:350, upgrade:200, vip:500, meal:250, tourney:150 }; // must match firestore.rules
+const hoursOfDur = t => { const m = /(\d+)/.exec(t || ''); return m ? +m[1] : 1; };
 async function bumpUser(tx, uid, delta, extra){
   const ref = doc(db, 'users', uid), snap = await tx.get(ref);
   const cur = snap.exists() ? (Number(snap.data().loyaltyPoints) || 0) : 0;
@@ -290,12 +292,13 @@ async function setBookingStatus(b, status){
   toast('Booking ' + status);
 }
 async function completeBooking(b){
-  const r = await ask('Complete booking', [{ k:'pts', label:'Points to award', type:'number', value:b.points || 10, required:true, hint:'Default is 10 points per booked hour. Change it if needed.' }], { hint:`${b.name} · ${b.date} ${b.time} · ${b.duration}`, ok:'Complete and award' });
-  if (!r || isNaN(r.pts) || r.pts < 0) return;
+  const r = await ask('Complete booking', [{ k:'pts', label:'Points to award', type:'number', value:Math.min(80, hoursOfDur(b.duration) * 10), required:true, hint:'Default is 10 points per booked hour. Change it if needed.' }], { hint:`${b.name} · ${b.date} ${b.time} · ${b.duration}`, ok:'Complete and award' });
+  if (!r || isNaN(r.pts) || r.pts < 0 || r.pts > 200 || Math.floor(r.pts) !== r.pts) { if (r) toast('Points must be a whole number from 0 to 200.', true); return; }
   try {
     await runTransaction(db, async tx => {
       const bref = doc(db, 'bookings', b.id), bs = await tx.get(bref);
-      if (bs.data().status === 'completed') throw new Error('already completed');
+      if (!bs.exists() || !['pending','confirmed'].includes(bs.data().status)) throw new Error('only a pending or confirmed booking can be completed (now: ' + (bs.exists() ? bs.data().status : 'missing') + ')');
+      if (bs.data().uid !== b.uid) throw new Error('booking changed, reload');
       const u = await bumpUser(tx, b.uid, r.pts, { displayName: b.name || undefined });
       tx.update(bref, { status:'completed', pointsAwarded:r.pts, updatedAt: serverTimestamp() });
       u.apply();
@@ -304,14 +307,18 @@ async function completeBooking(b){
   } catch(e) { toast('Could not complete: ' + (e.message || e.code), true); }
 }
 async function approveRedemption(x){
-  const ok = await confirmBox('Approve redemption', `${x.email || x.uid} gets "${x.reward}" and ${x.cost} points are deducted.`, 'Approve');
+  const price = REWARD_COST[x.rewardId];
+  if (price === undefined || x.cost !== price) { toast('This request has no valid catalog reward or price. Reject it.', true); return; }
+  const ok = await confirmBox('Approve redemption', `${x.email || x.uid} gets "${x.reward}" and ${price} points are deducted.`, 'Approve');
   if (!ok) return;
   try {
     await runTransaction(db, async tx => {
       const rref = doc(db, 'redemptions', x.id), rs = await tx.get(rref);
-      if (rs.data().status !== 'pending') throw new Error('already handled');
-      const u = await bumpUser(tx, x.uid, -x.cost);
-      if (u.cur < x.cost) throw new Error('customer has only ' + u.cur + ' points');
+      if (!rs.exists() || rs.data().status !== 'pending') throw new Error('already handled');
+      const d = rs.data(), cost = REWARD_COST[d.rewardId];
+      if (cost === undefined || d.cost !== cost) throw new Error('price does not match the catalog');
+      const u = await bumpUser(tx, d.uid, -cost);
+      if (u.cur < cost) throw new Error('customer has only ' + u.cur + ' points');
       tx.update(rref, { status:'approved', updatedAt: serverTimestamp() });
       u.apply();
     });
