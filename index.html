@@ -873,12 +873,12 @@ const CAFE_DATA = {
       { name:'DIAMOND', color:'#b47fff', req:'5,000 pts', min:5000, perk:'Priority booking + 2 free hrs' }
     ],
     rewards:[
-      { icon:'☕', name:'FREE DRINK', cost:'100 pts', pts:100, desc:'Any drink from the menu' },
-      { icon:'⏱️', name:'1 FREE HOUR', cost:'350 pts', pts:350, desc:'Any standard station' },
-      { icon:'🎮', name:'PERIPHERAL UPGRADE', cost:'200 pts', pts:200, desc:'Pro mouse + keyboard for session' },
-      { icon:'👑', name:'VIP SESSION', cost:'500 pts', pts:500, desc:'Full VIP lounge access (3hrs)' },
-      { icon:'🍔', name:'MEAL COMBO', cost:'250 pts', pts:250, desc:'Any meal + drink bundle' },
-      { icon:'🏆', name:'TOURNEY ENTRY', cost:'150 pts', pts:150, desc:'Free entry to any weekly event' }
+      { icon:'☕', id:'drink', name:'FREE DRINK', cost:'100 pts', pts:100, desc:'Any drink from the menu' },
+      { icon:'⏱️', id:'hour', name:'1 FREE HOUR', cost:'350 pts', pts:350, desc:'Any standard station' },
+      { icon:'🎮', id:'upgrade', name:'PERIPHERAL UPGRADE', cost:'200 pts', pts:200, desc:'Pro mouse + keyboard for session' },
+      { icon:'👑', id:'vip', name:'VIP SESSION', cost:'500 pts', pts:500, desc:'Full VIP lounge access (3hrs)' },
+      { icon:'🍔', id:'meal', name:'MEAL COMBO', cost:'250 pts', pts:250, desc:'Any meal + drink bundle' },
+      { icon:'🏆', id:'tourney', name:'TOURNEY ENTRY', cost:'150 pts', pts:150, desc:'Free entry to any weekly event' }
     ]
   }
 };
@@ -1348,7 +1348,7 @@ function redeemReward(i){
   const avail = NX.points - (NX.pending || 0);
   if(avail < r.pts){ showToast('You need ' + (r.pts - avail) + ' more points for ' + r.name + (NX.pending ? ' (some points are held by pending requests).' : '.')); return; }
   if(!window.NXDB){ showToast('Still connecting, try again in a moment.'); return; }
-  window.NXDB.requestRedeem({ reward:r.name, cost:r.pts }).then(()=>{
+  window.NXDB.requestRedeem({ rewardId:r.id, reward:r.name, cost:r.pts }).then(()=>{
     showToast('Request sent. Staff will approve it and your points update automatically.');
     openWhatsApp('Reward redemption request: ' + r.name + ' (' + r.cost + ')\nName: ' + (NX.user.displayName || NX.user.email) + '\nEmail: ' + (NX.user.email || '') + '\nCurrent points: ' + NX.points);
   }).catch(()=>showToast('Could not send the request. Please try again.'));
@@ -1498,7 +1498,7 @@ document.addEventListener('click', (e) => {
     },
     requestRedeem: async (r) => {
       const u = auth.currentUser; if(!u) throw new Error('not signed in');
-      return addDoc(collection(db, 'redemptions'), { uid:u.uid, email:u.email || '', reward:r.reward, cost:r.cost, status:'pending', createdAt:serverTimestamp() });
+      return addDoc(collection(db, 'redemptions'), { uid:u.uid, email:u.email || '', rewardId:r.rewardId, reward:r.reward, cost:r.cost, status:'pending', createdAt:serverTimestamp() });
     }
   };
 
