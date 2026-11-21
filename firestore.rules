@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only the owner, with a VERIFIED email, is admin.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'youssef.ahmed4990@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function signedIn() { return request.auth != null; }
+
+    // Customer profiles and loyalty points
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // new accounts always start at 0 points
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.loyaltyPoints == 0;
+      // customers can edit their profile but never their own points or rank
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+            && request.resource.data.loyaltyPoints == resource.data.loyaltyPoints
+            && request.resource.data.rank == resource.data.rank);
+      allow delete: if isAdmin();
+    }
+
+    // Booking requests made by logged-in customers
+    match /bookings/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid
+            && resource.data.status == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            && request.resource.data.status == 'cancelled');
+      allow delete: if isAdmin();
+    }
+
+    // Reward redemption requests (admin approves and deducts points)
+    match /redemptions/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.cost is number
+        && request.resource.data.cost > 0
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.loyaltyPoints >= request.resource.data.cost;
+      allow update, delete: if isAdmin();
+    }
+
+    // Public site content, editable only by the admin
+    match /menu/{id}    { allow read: if true; allow write: if isAdmin(); }
+    match /events/{id}  { allow read: if true; allow write: if isAdmin(); }
+    match /gallery/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // everything else is closed
+    match /{document=**} { allow read, write: if false; }
+  }
+}
